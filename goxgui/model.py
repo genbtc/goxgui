@@ -2,7 +2,7 @@ from PyQt4.QtCore import QAbstractTableModel
 from PyQt4.QtCore import Qt
 from PyQt4.QtCore import QVariant
 from PyQt4.QtCore import SIGNAL
-import utilities
+from utilities import *
 import abc
 
 
@@ -31,16 +31,29 @@ class Model(QAbstractTableModel):
         data_in = self._get_data_from_book(book)
         data_out = []
 
-        total_sum = 0
-
+        #total_sum = 0
+        total = 0
+        count = 1; vwap = 0; vsize = 0
         for x in data_in:
+            #price = gox2internal(x.price, 'USD')
+            #size = gox2internal(x.volume, 'BTC')
+            price = x.price
+            size = x.volume
+            
+            vsize += size
+            vwap += price * size
 
-            price = utilities.gox2internal(x.price, 'USD')
-            size = utilities.gox2internal(x.volume, 'BTC')
-            total = utilities.multiply_internal(price, size)
-            total_sum += total
-
-            data_out.append([price, size, total, total_sum])
+            #total = multiply_internal(price, size)
+            total += size
+            #total_sum += total
+            if vsize > float2internal(0.6):         #ignore anything BELOW this volume and cumulate it into the next.
+                vwap = gox2internal( ( vwap / count ) / ( vsize / count), 'USD')
+                vsize = gox2internal(vsize,'BTC')
+                total = gox2internal(total,'BTC')
+                data_out.append([vwap, vsize, total])#, total_sum])
+                count = 1; vwap = 0; vsize = 0
+            else:
+                count += 1
 
         return data_out
 
@@ -61,8 +74,8 @@ class Model(QAbstractTableModel):
     def get_total(self, index):
         return self.__data[index][2]
 
-    def get_sum_total(self, index):
-        return self.__data[index][3]
+    # def get_sum_total(self, index):
+        # return self.__data[index][3]
 
     # START Qt methods
 
@@ -84,13 +97,13 @@ class Model(QAbstractTableModel):
         col = index.column()
 
         if col == 0:
-            return QVariant(utilities.internal2str(self.get_price(row)))
+            return QVariant(internal2str(self.get_price(row), 5))
         if col == 1:
-            return QVariant(utilities.internal2str(self.get_size(row)))
+            return QVariant(internal2str(self.get_size(row)))
         if col == 2:
-            return QVariant(utilities.internal2str(self.get_total(row), 5))
-        if col == 3:
-            return QVariant(utilities.internal2str(self.get_sum_total(row), 5))
+            return QVariant(internal2str(self.get_total(row), 5))
+        # if col == 3:
+            # return QVariant(internal2str(self.get_sum_total(row), 5))
 
     def headerData(self, col, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
@@ -103,7 +116,7 @@ class Model(QAbstractTableModel):
 class ModelAsk(Model):
 
     def __init__(self, gox):
-        Model.__init__(self, gox, ['Ask', 'Size', 'Total', 'Sum Total'])
+        Model.__init__(self, gox, ['Ask', 'Size', 'Total'])#, 'Sum Total'])
 
     def _get_data_from_book(self, book):
         return book.asks
@@ -112,7 +125,7 @@ class ModelAsk(Model):
 class ModelBid(Model):
 
     def __init__(self, gox):
-        Model.__init__(self, gox, ['Bid', 'Size', 'Total', 'Sum Total'])
+        Model.__init__(self, gox, ['Bid', 'Size', 'Total']),# 'Sum Total'])
 
     def _get_data_from_book(self, book):
         return book.bids

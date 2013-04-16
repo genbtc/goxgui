@@ -1,3 +1,3 @@
-@echo off
-set PYTHONPATH=%PYTHONPATH%;../goxgui;../goxtool
-python ../goxgui/application.py
+set PYTHONPATH=%PYTHONPATH%;..\goxgui;..\goxtool
+cd ..\goxgui\
+start application.pyw
