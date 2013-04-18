@@ -22,6 +22,7 @@
 '''
 
 import goxapi
+import os
 import sys
 
 from PyQt4.QtGui import QIcon
@@ -51,9 +52,7 @@ class Application(QApplication):
         # initialize view
         self.view = View(self.gox, self.secret, self.logfile)
 
-        self.view.log('')
         self.view.log('Starting application.')
-        self.view.log('')
 
         # start connection to MtGox
         self.gox.start()
@@ -65,7 +64,16 @@ class Application(QApplication):
         self.logfile.close()
 
 
+def resource_path(relative):
+    return os.path.join(
+        os.environ.get(
+            "_MEIPASS2",
+            os.path.abspath(".")
+        ),
+        relative
+    )
+
 if __name__ == '__main__':
     app = Application(sys.argv)
-    app.setWindowIcon(QIcon('bitcoin.png'))
+    app.setWindowIcon(QIcon(resource_path('bitcoin.png')))
     app.exec_()

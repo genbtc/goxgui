@@ -93,7 +93,8 @@ class View(QMainWindow):
 
     def log(self, text):
         text = self.prepend_date(text)
-        self.mainWindow.textBrowserLog.append(text)
+        if not "depth" in text:
+            self.mainWindow.textBrowserLog.append(text)
         self.log_to_file(text)
 
     def prepend_date(self, text):

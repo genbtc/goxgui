@@ -47,7 +47,7 @@ class Model(QAbstractTableModel):
             total += size
             #total_sum += total
             if vsize > float2internal(0.6):         #ignore anything BELOW this volume and cumulate it into the next.
-                vwap = gox2internal( ( vwap / count ) / ( vsize / count), 'USD')
+                vwap = gox2internal(vwap/vsize, 'USD')
                 vsize = gox2internal(vsize,'BTC')
                 total = gox2internal(total,'BTC')
                 data_out.append([vwap, vsize, total])#, total_sum])
