@@ -150,6 +150,9 @@
             <pointsize>8</pointsize>
            </font>
           </property>
+          <property name="focusPolicy">
+           <enum>Qt::ClickFocus</enum>
+          </property>
           <property name="toolTip">
            <string>Insert your MtGox key here</string>
           </property>
@@ -168,6 +171,9 @@
             <family>Monaco</family>
             <pointsize>8</pointsize>
            </font>
+          </property>
+          <property name="focusPolicy">
+           <enum>Qt::ClickFocus</enum>
           </property>
           <property name="toolTip">
            <string>Insert your MtGox secret here</string>
@@ -205,7 +211,7 @@
        <attribute name="title">
         <string>Password</string>
        </attribute>
-       <widget class="QLineEdit" name="lineEdit">
+       <widget class="QLineEdit" name="passwordLineEdit">
         <property name="geometry">
          <rect>
           <x>255</x>
@@ -222,6 +228,22 @@
         </property>
         <property name="placeholderText">
          <string>Enter your Password</string>
+        </property>
+       </widget>
+       <widget class="QPushButton" name="passwordButton">
+        <property name="geometry">
+         <rect>
+          <x>490</x>
+          <y>10</y>
+          <width>75</width>
+          <height>23</height>
+         </rect>
+        </property>
+        <property name="text">
+         <string>DeCrypt</string>
+        </property>
+        <property name="flat">
+         <bool>false</bool>
         </property>
        </widget>
       </widget>
@@ -673,11 +695,23 @@
           <property name="cursor" stdset="0">
            <cursorShape>ArrowCursor</cursorShape>
           </property>
+          <property name="frameShape">
+           <enum>QFrame::WinPanel</enum>
+          </property>
           <property name="alternatingRowColors">
            <bool>true</bool>
           </property>
+          <property name="selectionBehavior">
+           <enum>QAbstractItemView::SelectRows</enum>
+          </property>
+          <property name="sortingEnabled">
+           <bool>true</bool>
+          </property>
+          <attribute name="horizontalHeaderDefaultSectionSize">
+           <number>50</number>
+          </attribute>
           <attribute name="horizontalHeaderMinimumSectionSize">
-           <number>100</number>
+           <number>15</number>
           </attribute>
           <attribute name="horizontalHeaderShowSortIndicator" stdset="0">
            <bool>true</bool>

@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'main_window.ui'
 #
-# Created: Fri Apr 19 21:50:58 2013
+# Created: Sat Apr 20 04:24:08 2013
 #      by: PyQt4 UI code generator 4.10
 #
 # WARNING! All changes made in this file will be lost!
@@ -82,6 +82,7 @@ class Ui_MainWindow(object):
         font.setFamily(_fromUtf8("Monaco"))
         font.setPointSize(8)
         self.lineEditKey.setFont(font)
+        self.lineEditKey.setFocusPolicy(QtCore.Qt.ClickFocus)
         self.lineEditKey.setAlignment(QtCore.Qt.AlignCenter)
         self.lineEditKey.setObjectName(_fromUtf8("lineEditKey"))
         self.horizontalLayout_2.addWidget(self.lineEditKey)
@@ -90,6 +91,7 @@ class Ui_MainWindow(object):
         font.setFamily(_fromUtf8("Monaco"))
         font.setPointSize(8)
         self.lineEditSecret.setFont(font)
+        self.lineEditSecret.setFocusPolicy(QtCore.Qt.ClickFocus)
         self.lineEditSecret.setInputMethodHints(QtCore.Qt.ImhNoAutoUppercase|QtCore.Qt.ImhNoPredictiveText)
         self.lineEditSecret.setEchoMode(QtGui.QLineEdit.PasswordEchoOnEdit)
         self.lineEditSecret.setAlignment(QtCore.Qt.AlignCenter)
@@ -102,11 +104,15 @@ class Ui_MainWindow(object):
         self.tabWidget_1.addTab(self.tabWidgetAuthPage2, _fromUtf8(""))
         self.tabWidgetPasswordPage3 = QtGui.QWidget()
         self.tabWidgetPasswordPage3.setObjectName(_fromUtf8("tabWidgetPasswordPage3"))
-        self.lineEdit = QtGui.QLineEdit(self.tabWidgetPasswordPage3)
-        self.lineEdit.setGeometry(QtCore.QRect(255, 5, 211, 31))
-        self.lineEdit.setEchoMode(QtGui.QLineEdit.Password)
-        self.lineEdit.setAlignment(QtCore.Qt.AlignCenter)
-        self.lineEdit.setObjectName(_fromUtf8("lineEdit"))
+        self.passwordLineEdit = QtGui.QLineEdit(self.tabWidgetPasswordPage3)
+        self.passwordLineEdit.setGeometry(QtCore.QRect(255, 5, 211, 31))
+        self.passwordLineEdit.setEchoMode(QtGui.QLineEdit.Password)
+        self.passwordLineEdit.setAlignment(QtCore.Qt.AlignCenter)
+        self.passwordLineEdit.setObjectName(_fromUtf8("passwordLineEdit"))
+        self.passwordButton = QtGui.QPushButton(self.tabWidgetPasswordPage3)
+        self.passwordButton.setGeometry(QtCore.QRect(490, 10, 75, 23))
+        self.passwordButton.setFlat(False)
+        self.passwordButton.setObjectName(_fromUtf8("passwordButton"))
         self.tabWidget_1.addTab(self.tabWidgetPasswordPage3, _fromUtf8(""))
         self.verticalLayout_2.addWidget(self.tabWidget_1)
         self.groupBoxTrading = QtGui.QGroupBox(self.widgetMain)
@@ -300,9 +306,13 @@ class Ui_MainWindow(object):
         font.setPointSize(11)
         self.tableUserOrders.setFont(font)
         self.tableUserOrders.viewport().setProperty("cursor", QtGui.QCursor(QtCore.Qt.ArrowCursor))
+        self.tableUserOrders.setFrameShape(QtGui.QFrame.WinPanel)
         self.tableUserOrders.setAlternatingRowColors(True)
+        self.tableUserOrders.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
+        self.tableUserOrders.setSortingEnabled(True)
         self.tableUserOrders.setObjectName(_fromUtf8("tableUserOrders"))
-        self.tableUserOrders.horizontalHeader().setMinimumSectionSize(100)
+        self.tableUserOrders.horizontalHeader().setDefaultSectionSize(50)
+        self.tableUserOrders.horizontalHeader().setMinimumSectionSize(15)
         self.tableUserOrders.horizontalHeader().setSortIndicatorShown(True)
         self.tableUserOrders.horizontalHeader().setStretchLastSection(True)
         self.tableUserOrders.verticalHeader().setDefaultSectionSize(20)
@@ -402,7 +412,8 @@ class Ui_MainWindow(object):
         self.pushButtonApply.setToolTip(_translate("MainWindow", "Save this key / secret combination and use it", None))
         self.pushButtonApply.setText(_translate("MainWindow", "Apply", None))
         self.tabWidget_1.setTabText(self.tabWidget_1.indexOf(self.tabWidgetAuthPage2), _translate("MainWindow", "Authentication", None))
-        self.lineEdit.setPlaceholderText(_translate("MainWindow", "Enter your Password", None))
+        self.passwordLineEdit.setPlaceholderText(_translate("MainWindow", "Enter your Password", None))
+        self.passwordButton.setText(_translate("MainWindow", "DeCrypt", None))
         self.tabWidget_1.setTabText(self.tabWidget_1.indexOf(self.tabWidgetPasswordPage3), _translate("MainWindow", "Password", None))
         self.groupBoxTrading.setTitle(_translate("MainWindow", "Trading", None))
         self.radioButtonBuy.setText(_translate("MainWindow", "Buy", None))

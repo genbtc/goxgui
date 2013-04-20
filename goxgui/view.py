@@ -15,7 +15,6 @@ class View(QMainWindow):
     Represents the combined view / control.
     '''
 
-    PASSPHRASE = 'fffuuuuuuu'
 
     def __init__(self, gox, secret, logfile):
 
@@ -30,6 +29,8 @@ class View(QMainWindow):
         # setup gox objects
         self.gox = gox
         self.secret = secret
+        
+        self.passphrase = ''
 
         # connect to gox signals
         self.adaptor = Adaptor(self.gox)
@@ -51,6 +52,8 @@ class View(QMainWindow):
 
         #Auth TAB
         self.mainWindow.pushButtonApply.released.connect(self.save_credentials)
+        #Password TAB
+        self.mainWindow.passwordButton.released.connect(self.load_credentials)
         
         #OrderBook TAB
         self.mainWindow.tableAsk.clicked.connect(self.update_edit_from_ask_book)
@@ -59,6 +62,8 @@ class View(QMainWindow):
         #User Orders TAB
         self.modelOwns = ModelOwns(self.gox)
         self.mainWindow.tableUserOrders.setModel(self.modelOwns)
+        self.mainWindow.tableUserOrders.resizeColumnsToContents()
+        self.mainWindow.tableUserOrders.clicked.connect(self.userorder_selected)
         
         #Trading Box
         self.mainWindow.pushButtonGo.released.connect(self.execute_trade)
@@ -68,13 +73,19 @@ class View(QMainWindow):
         self.mainWindow.pushButtonTotal.released.connect(self.recalculate_total)
         
         self.mainWindow.textBrowserStatus.anchorClicked.connect(self.order_selected)
-        
-
-        # load credentials from configuration file
-        self.load_credentials()
 
         self.show()
         self.raise_()
+        
+    def restart_gox(self):
+        self.gox.client.debug("Closing Down Socket")
+        self.gox.client._terminating = True
+        self.gox.client.socket.close()
+        self.gox.client.connected = False
+        self.gox.client.socket = None
+        self.gox.client.debug("Starting new Socket")
+        self.gox.client._terminating = False
+        self.gox.start()
 
     def get_selected_trade_type(self):
         return 'BUY' if self.mainWindow.radioButtonBuy.isChecked() else 'SELL'
@@ -167,6 +178,9 @@ class View(QMainWindow):
 
     def order_selected(self, url):
         self.set_order_id(str(url.toString()))
+        
+    def userorder_selected(self, index):
+        self.set_order_id(self.modelOwns.get_oid(index.row()))
 
     def save_credentials(self):
         '''
@@ -174,34 +188,39 @@ class View(QMainWindow):
         and save them to the configuration file.
         Incomplete or inplausible credentials will not be saved.
         '''
+        def error_message(reason):
+            phrase = 'Credentials not saved'
+            self.status_message(phrase + reason)
+            return 0
 
         key = str(format(self.mainWindow.lineEditKey.text()))
         secret = str(self.mainWindow.lineEditSecret.text())
-
+           
         if key == '':
-            self.status_message("Credentials not saved (empty key).")
-            return
-
+            return error_message(" (empty key).")
         if secret == '':
-            self.status_message("Credentials not saved (empty secret).")
-            return
+            return error_message(" (empty secret).")
 
+
+        self.passphrase = str(self.mainWindow.passwordLineEdit.text())
+        if self.passphrase == '':
+            self.mainWindow.tabWidget_1.setCurrentIndex(2)
+            return error_message(" (invalid password).")
+                
         try:
             utilities.assert_valid_key(key)
         except Exception:
-            self.status_message("Credentials not saved (invalid key).")
-            return
-
+            return error_message(" (invalid key).")
+        
         try:
-            secret = utilities.encrypt(secret, View.PASSPHRASE)
+            secret = utilities.encrypt(secret, self.passphrase)
         except Exception:
-            self.status_message("Credentials not saved (invalid secret).")
-            return
+            return error_message(" (invalid secret).")
 
         self.gox.config.set("gox", "secret_key", key)
         self.gox.config.set("gox", "secret_secret", secret)
         self.gox.config.save()
-        self.status_message("Credentials changed. Please restart application.")
+        self.load_credentials()
 
     def load_credentials(self):
         '''
@@ -213,18 +232,23 @@ class View(QMainWindow):
         key = self.gox.config.get_string("gox", "secret_key")
         secret = self.gox.config.get_string("gox", "secret_secret")
 
+        self.passphrase = str(self.mainWindow.passwordLineEdit.text())
         try:
             utilities.assert_valid_key(key)
-            secret = utilities.decrypt(secret, View.PASSPHRASE)
+            secret = utilities.decrypt(secret, self.passphrase)
         except Exception:
             key = ''
             secret = ''
 
         self.secret.key = key
-        self.mainWindow.lineEditKey.setText(key)
         self.secret.secret = secret
-        self.mainWindow.lineEditSecret.setText(secret)
-
+        if not key == '' and not secret == '':
+            self.mainWindow.lineEditKey.setPlaceholderText('Loaded Key From File')
+            self.mainWindow.lineEditSecret.setPlaceholderText('Decrypted Secret Using Password')
+        self.mainWindow.tabWidget_1.setCurrentIndex(0)
+        self.status_message("Credentials changed. Restarting MtGox Client")
+        self.restart_gox()
+        
     def display_wallet(self):
         self.set_wallet_usd(utilities.gox2internal(self.gox.wallet['USD'], 'USD'))
         self.set_wallet_btc(utilities.gox2internal(self.gox.wallet['BTC'], 'BTC'))
@@ -295,7 +319,8 @@ class View(QMainWindow):
         else:
             self.status_message("{0} size: {1}, price: {2}, oid: <a href=\"{3}\">{3}</a> - {4}".format(# @IgnorePep8
                 str.upper(str(order_type)), size, price, oid, status))
-            self.set_order_id(oid)
+            if status == 'post-pending':
+                self.set_order_id(oid)
 
     def cancel_order(self):
         order_id = self.get_order_id()
@@ -304,12 +329,6 @@ class View(QMainWindow):
         self.gox.cancel(order_id)
         
     def update_edit_from_ask_book(self, index):
-        #useless since I split into two functions.
-        #the split was done because the signal could not transmit additional arguments  and...
-        #i have no way to tell the two apart.
-        
-        #trade_type = self.get_selected_trade_type()
-        #mapdict = {"BUY":self.modelBid,"SELL":self.modelAsk}
         self.set_trade_price(self.modelAsk.get_price(index.row()))
         self.set_trade_size(self.modelAsk.get_size(index.row()))
         self.set_selected_trade_type('SELL')
