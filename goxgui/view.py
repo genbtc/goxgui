@@ -4,6 +4,7 @@ from adaptor import Adaptor
 from ui.main_window_ import Ui_MainWindow
 from model import ModelAsk
 from model import ModelBid
+from model import ModelOwns
 import utilities
 import time
 import os
@@ -13,12 +14,6 @@ class View(QMainWindow):
     '''
     Represents the combined view / control.
     '''
-
-    # how the application-proposed bid will differ from the selected bid
-    ADD_TO_BID = 1
-
-    # how the application-proposed ask will differ from the selected ask
-    SUB_FROM_ASK = 1
 
     PASSPHRASE = 'fffuuuuuuu'
 
@@ -50,28 +45,30 @@ class View(QMainWindow):
         self.mainWindow.tableBid.setModel(self.modelBid)
 
         # connect signals from UI Qt components to our own slots
-        self.mainWindow.pushButtonApply.released.connect(
-            self.save_credentials)
-        self.mainWindow.pushButtonGo.released.connect(
-            self.execute_trade)
-        self.mainWindow.tableAsk.clicked.connect(
-            self.update_price_from_asks)
-        self.mainWindow.tableBid.clicked.connect(
-            self.update_price_from_bids)
-        self.mainWindow.pushButtonCancel.released.connect(
-            self.cancel_order)
-        self.mainWindow.textBrowserStatus.anchorClicked.connect(
-            self.order_selected)
-        self.mainWindow.pushButtonWalletA.released.connect(
-            self.set_trade_size_from_wallet)
-        self.mainWindow.pushButtonWalletB.released.connect(
-            self.set_trade_total_from_wallet)
-        self.mainWindow.pushButtonSize.released.connect(
-            self.recalculate_size)
-        self.mainWindow.pushButtonPrice.released.connect(
-            self.update_price_best)
-        self.mainWindow.pushButtonTotal.released.connect(
-            self.recalculate_total)
+        #Account Balance TAB
+        self.mainWindow.pushButtonWalletA.released.connect(self.set_trade_size_from_wallet)
+        self.mainWindow.pushButtonWalletB.released.connect(self.set_trade_total_from_wallet)
+
+        #Auth TAB
+        self.mainWindow.pushButtonApply.released.connect(self.save_credentials)
+        
+        #OrderBook TAB
+        self.mainWindow.tableAsk.clicked.connect(self.update_edit_from_ask_book)
+        self.mainWindow.tableBid.clicked.connect(self.update_edit_from_bid_book)
+        
+        #User Orders TAB
+        self.modelOwns = ModelOwns(self.gox)
+        self.mainWindow.tableUserOrders.setModel(self.modelOwns)
+        
+        #Trading Box
+        self.mainWindow.pushButtonGo.released.connect(self.execute_trade)
+        self.mainWindow.pushButtonCancel.released.connect(self.cancel_order)
+        self.mainWindow.pushButtonSize.released.connect(self.recalculate_size)
+        self.mainWindow.pushButtonPrice.released.connect(self.update_edit_on_button)
+        self.mainWindow.pushButtonTotal.released.connect(self.recalculate_total)
+        
+        self.mainWindow.textBrowserStatus.anchorClicked.connect(self.order_selected)
+        
 
         # load credentials from configuration file
         self.load_credentials()
@@ -80,10 +77,7 @@ class View(QMainWindow):
         self.raise_()
 
     def get_selected_trade_type(self):
-        if self.mainWindow.radioButtonBuy.isChecked():
-            return 'BUY'
-        else:
-            return 'SELL'
+        return 'BUY' if self.mainWindow.radioButtonBuy.isChecked() else 'SELL'
 
     def set_selected_trade_type(self, trade_type):
         if trade_type == 'BUY':
@@ -93,9 +87,28 @@ class View(QMainWindow):
 
     def log(self, text):
         text = self.prepend_date(text)
-        if not "depth" in text:
-            self.mainWindow.textBrowserLog.append(text)
+        doOutput = False
+        
         self.log_to_file(text)
+        
+        channels = {"tick":self.mainWindow.tickerCheckBox,
+                   "TRADE":self.mainWindow.tradesCheckBox,
+                   "depth":self.mainWindow.depthCheckBox}
+           
+        for k,v in channels.iteritems():
+            if not v.isChecked():
+                if k in text:
+                    return
+                
+        if self.mainWindow.systemCheckBox.isChecked():
+            doOutput = True
+        else:
+            for k in channels.iterkeys():
+                if k in text:
+                    doOutput = True
+
+        if doOutput:
+            self.mainWindow.textBrowserLog.append(text)
 
     def prepend_date(self, text):
         millis = int(round(time.time() * 1000)) % 1000
@@ -213,19 +226,15 @@ class View(QMainWindow):
         self.mainWindow.lineEditSecret.setText(secret)
 
     def display_wallet(self):
-        self.set_wallet_usd(
-            utilities.gox2internal(self.gox.wallet['USD'], 'USD'))
-        self.set_wallet_btc(
-            utilities.gox2internal(self.gox.wallet['BTC'], 'BTC'))
+        self.set_wallet_usd(utilities.gox2internal(self.gox.wallet['USD'], 'USD'))
+        self.set_wallet_btc(utilities.gox2internal(self.gox.wallet['BTC'], 'BTC'))
 
     def set_trade_size_from_wallet(self):
-        self.set_trade_size(
-            utilities.gox2internal(self.gox.wallet['BTC'], 'BTC'))
+        self.set_trade_size(utilities.gox2internal(self.gox.wallet['BTC'], 'BTC'))
         self.set_selected_trade_type('SELL')
 
     def set_trade_total_from_wallet(self):
-        self.set_trade_total(
-            utilities.gox2internal(self.gox.wallet['USD'], 'USD'))
+        self.set_trade_total(utilities.gox2internal(self.gox.wallet['USD'], 'USD'))
         self.set_selected_trade_type('BUY')
 
     def display_orderlag(self, ms, text):
@@ -241,19 +250,17 @@ class View(QMainWindow):
 
         trade_name = 'BID' if trade_type == 'BUY' else 'ASK'
 
-        self.status_message('Placing order: {0} {1} BTC at {2} USD (total {3} USD)...'.format(# @IgnorePep8
+        self.status_message('Placing order: {0} {1} BTC at $ {2} USD (total $ {3} USD)...'.format(# @IgnorePep8
             trade_name,
             utilities.internal2str(size),
-            utilities.internal2str(price),
+            utilities.internal2str(price, 5),
             utilities.internal2str(total, 5)))
 
         sizeGox = utilities.internal2gox(size, 'BTC')
         priceGox = utilities.internal2gox(price, 'USD')
 
-        if trade_type == 'BUY':
-            self.gox.buy(priceGox, sizeGox)
-        else:
-            self.gox.sell(priceGox, sizeGox)
+        mapdict = {"BUY":self.gox.buy,"SELL":self.gox.sell}
+        mapdict[trade_type](priceGox, sizeGox)
 
     def recalculate_size(self):
 
@@ -290,28 +297,32 @@ class View(QMainWindow):
                 str.upper(str(order_type)), size, price, oid, status))
             self.set_order_id(oid)
 
-    def update_price_from_asks(self, index):
-        self.set_trade_price(self.modelAsk.get_price(index.row())
-            - self.SUB_FROM_ASK)
-
-    def update_price_from_bids(self, index):
-        self.set_trade_price(self.modelBid.get_price(index.row())
-            + self.ADD_TO_BID)
-
     def cancel_order(self):
         order_id = self.get_order_id()
         self.status_message(
             "Cancelling order <a href=\"{0}\">{0}</a>...".format(order_id))
         self.gox.cancel(order_id)
+        
+    def update_edit_from_ask_book(self, index):
+        #useless since I split into two functions.
+        #the split was done because the signal could not transmit additional arguments  and...
+        #i have no way to tell the two apart.
+        
+        #trade_type = self.get_selected_trade_type()
+        #mapdict = {"BUY":self.modelBid,"SELL":self.modelAsk}
+        self.set_trade_price(self.modelAsk.get_price(index.row()))
+        self.set_trade_size(self.modelAsk.get_size(index.row()))
+        self.set_selected_trade_type('SELL')
+        
+    def update_edit_from_bid_book(self, index):
+        self.set_trade_price(self.modelBid.get_price(index.row()))
+        self.set_trade_size(self.modelBid.get_size(index.row()))
+        self.set_selected_trade_type('BUY')
+       
 
-    def update_price_best(self):
-
+    def update_edit_on_button(self):
         trade_type = self.get_selected_trade_type()
-        if trade_type == 'BUY':
-            price = self.modelBid.get_price(0)
-            price += self.ADD_TO_BID
-            self.set_trade_price(price)
-        elif trade_type == 'SELL':
-            price = self.modelAsk.get_price(0)
-            price -= self.SUB_FROM_ASK
-            self.set_trade_price(price)
+        mapdict = {"BUY":self.modelBid,"SELL":self.modelAsk}
+        self.set_trade_price(mapdict[trade_type].get_price(0))
+        self.set_trade_size(mapdict[trade_type].get_size(0))        
+            
