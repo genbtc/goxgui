@@ -26,9 +26,9 @@ I have tested the application on **OSX 10.7.5** and **Windows XP** within the fo
 * PyQt (matching the above Python / Qt versions)
 * pycrypto 2.6
 
-goxtool will be installed with goxgui, so you don't need to install it manually.
+goxtool will be downloaded with goxgui, so you don't need to install it manually.
 
-Installation
+Installation from Source
 ------------
 
 Please note: **you must make sure all prerequisites are installed**, otherwise the application will not work.
@@ -38,6 +38,10 @@ Please note: **you must make sure all prerequisites are installed**, otherwise t
     chmod 755 ./start_linux.sh
     ./start_linux.sh # or start_mac.sh, start_win.bat
 
+Windows EXE
+----------------
+The goxgui.exe is a compiled verson, and should work fine (although there is no icon...)
+
 Requests
 --------
 
@@ -46,7 +50,9 @@ Bugs and feature requests can be posted in [the goxgui thread on bitcointalk.org
 Donations
 ---------
 
-1QAbFdV6KDqMsFG9bjmeeBYCQzymXpsifc (Bitcoin)
+1QAbFdV6KDqMsFG9bjmeeBYCQzymXpsifc (sebastianhabery)
+13iDBNombaN4HoXsqcM3smuKHTum3LrBx6 (genBTC)
+
 
 Disclaimer
 ----------
