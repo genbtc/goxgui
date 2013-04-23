@@ -44,6 +44,7 @@ Then run the program by:
 Windows EXE
 ----------------
 The goxgui.exe is a pre-compiled binary verson, and should work fine (although there is no icon...)
+![Link](https://raw.github.com/genbtc/goxgui/master/goxgui.exe)
 
 Requests
 --------
