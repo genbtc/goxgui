@@ -21,7 +21,6 @@
 
 '''
 
-import goxapi
 import os
 import sys
 
@@ -30,7 +29,9 @@ from PyQt4.QtGui import QApplication
 from PyQt4.QtCore import SIGNAL
 from view import View
 
-
+import goxapi
+import stoploss
+            
 class Application(QApplication):
     '''
     The main application class where the main objects
@@ -49,14 +50,16 @@ class Application(QApplication):
         self.secret = goxapi.Secret(self.config)
         self.gox = goxapi.Gox(self.secret, self.config)
 
+        
+        self.strategy_object = stoploss.Strategy(self.gox)
+                
         # initialize view
         self.view = View(self.gox, self.secret, self.logfile)
-
         self.view.log('Starting application.')
 
         # start connection to MtGox
         self.gox.start()
-
+        
         self.connect(self, SIGNAL('lastWindowClosed()'), self.__quit)
 
     def __quit(self):
