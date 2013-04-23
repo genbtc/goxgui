@@ -11,6 +11,7 @@ class Adaptor(QObject):
     signal_wallet = pyqtSignal()
     signal_orderlag = pyqtSignal('long long', str)
     signal_userorder = pyqtSignal('long long', 'long long', str, str, str)
+    signal_ticker = pyqtSignal('long long', 'long long')
 
     def __init__(self, gox):
         QObject.__init__(self)
@@ -19,6 +20,7 @@ class Adaptor(QObject):
         self.gox.signal_wallet.connect(self.wallet)
         self.gox.signal_orderlag.connect(self.orderlag)
         self.gox.signal_userorder.connect(self.userorder)
+        self.gox.signal_ticker.connect(self.ticker)
 
     def log(self, dummy_gox, (text)):
         self.signal_log.emit(text)
@@ -33,3 +35,7 @@ class Adaptor(QObject):
         (price, size, order_type, oid, status_message) = data
         self.signal_userorder.emit(
             price, size, order_type, oid, status_message)
+
+    def ticker(self, dummy_sender, (bid, ask)):
+        self.signal_ticker.emit(bid, ask)
+    

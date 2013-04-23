@@ -1,10 +1,9 @@
 from PyQt4.QtGui import QMainWindow
 from PyQt4.QtGui import QTextCursor
+from PyQt4.QtGui import QApplication
 from adaptor import Adaptor
 from ui.main_window_ import Ui_MainWindow
-from model import ModelAsk
-from model import ModelBid
-from model import ModelOwns
+from model import ModelAsk,ModelBid,ModelOwns,ModelStops
 import utilities
 import time
 import os
@@ -32,12 +31,20 @@ class View(QMainWindow):
         
         self.passphrase = ''
 
+        # associate log channels with their check boxes
+        self.logchannels = [
+            [self.mainWindow.tickerCheckBox, 'tick'],
+            [self.mainWindow.tradesCheckBox, 'TRADE'],
+            [self.mainWindow.depthCheckBox, 'depth'],
+        ]
+        
         # connect to gox signals
         self.adaptor = Adaptor(self.gox)
         self.adaptor.signal_log.connect(self.log)
         self.adaptor.signal_wallet.connect(self.display_wallet)
         self.adaptor.signal_orderlag.connect(self.display_orderlag)
         self.adaptor.signal_userorder.connect(self.display_userorder)
+        self.adaptor.signal_ticker.connect(self.slot_ticker)
 
         # initialize and connect bid / ask table models
         self.modelAsk = ModelAsk(self.gox)
@@ -73,19 +80,63 @@ class View(QMainWindow):
         self.mainWindow.pushButtonTotal.released.connect(self.recalculate_total)
         
         self.mainWindow.textBrowserStatus.anchorClicked.connect(self.order_selected)
+        
+        #reset the mtgox socketIO socket
+        self.mainWindow.pushbuttonResetSocket.released.connect(self.restart_gox)
+        
+        #create the stop orders window.
+        self.modelStops = ModelStops(self.gox)
+        self.mainWindow.tableStopOrders.setModel(self.modelStops)
+        self.mainWindow.tableStopOrders.resizeColumnsToContents()
 
+        #add stop orders into the stop database
+        self.mainWindow.pushButton1StopAdd.released.connect(self.add_stopOrder)
+        #on click, put Stop Order ID into the cancel button box.
+        self.mainWindow.tableStopOrders.clicked.connect(self.stopOrder_selected)
+        #remove a stop order
+        self.mainWindow.pushButtonStopRemove.released.connect(self.remove_stopOrder)
+        #activate the bot with the checkbox.
+        self.mainWindow.checkBoxActivateStopLossBot.clicked.connect(self.stopbot_act_deact)
+        
+        
         self.show()
         self.raise_()
+
+
+    def add_stopOrder(self):
+        size = float(self.mainWindow.lineEdit1StopSize.text())
+        price = float(self.mainWindow.lineEdit2StopPrice.text())
+        self.mainWindow.lineEdit1StopSize.setText('')
+        self.mainWindow.lineEdit2StopPrice.setText('')
+        oid = len(self.gox.stopOrders)+1
+        self.gox.stopOrders.append([oid,size,price])
+        self.modelStops.changed()
+
+    def stopOrder_selected(self, index):
+        self.mainWindow.lineEdit3StopID.setText(str(self.modelStops.get(index.row(),0)))        
+        
+    def remove_stopOrder(self):
+        oid = self.mainWindow.lineEdit3StopID.text()
+        oid = int(oid)-1
+        self.mainWindow.lineEdit3StopID.setText('')
+        self.gox.stopOrders.remove(self.gox.stopOrders[oid])
+        self.modelStops.changed()
+
+    def stopbot_act_deact(self):
+        if self.mainWindow.checkBoxActivateStopLossBot.isChecked():
+            self.gox.stopbot_active = True
+        else:
+            self.gox.stopbot_active = False
+
+    def slot_ticker(self,bid,ask):
+        #change the title to match any updates from the ticker channel
+        newtitle = "MtGox Trading UI - Bid: {0}, Ask: {1}".format(bid/1E5,ask/1E5)
+        self.setWindowTitle(QApplication.translate("MainWindow", newtitle, None, QApplication.UnicodeUTF8))
         
     def restart_gox(self):
-        self.gox.client.debug("Closing Down Socket")
-        self.gox.client._terminating = True
+        self.gox.client.debug("Restarting MtGox SocketIO Client")
         self.gox.client.socket.close()
         self.gox.client.connected = False
-        self.gox.client.socket = None
-        self.gox.client.debug("Starting new Socket")
-        self.gox.client._terminating = False
-        self.gox.start()
 
     def get_selected_trade_type(self):
         return 'BUY' if self.mainWindow.radioButtonBuy.isChecked() else 'SELL'
@@ -98,24 +149,20 @@ class View(QMainWindow):
 
     def log(self, text):
         text = self.prepend_date(text)
-        doOutput = False
-        
         self.log_to_file(text)
         
-        channels = {"tick":self.mainWindow.tickerCheckBox,
-                   "TRADE":self.mainWindow.tradesCheckBox,
-                   "depth":self.mainWindow.depthCheckBox}
-           
-        for k,v in channels.iteritems():
-            if not v.isChecked():
-                if k in text:
+        doOutput = False
+        
+        for entry in self.logchannels:
+            if not entry[0].isChecked():
+                if entry[1] in text:
                     return
-                
+
         if self.mainWindow.systemCheckBox.isChecked():
             doOutput = True
         else:
-            for k in channels.iterkeys():
-                if k in text:
+            for entry in self.logchannels:
+                if entry[1] in text:
                     doOutput = True
 
         if doOutput:
@@ -338,7 +385,6 @@ class View(QMainWindow):
         self.set_trade_size(self.modelBid.get_size(index.row()))
         self.set_selected_trade_type('BUY')
        
-
     def update_edit_on_button(self):
         trade_type = self.get_selected_trade_type()
         mapdict = {"BUY":self.modelBid,"SELL":self.modelAsk}

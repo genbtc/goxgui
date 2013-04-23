@@ -252,3 +252,93 @@ class ModelOwns(ModelUserOwn):
 
     def _get_data_from_book(self, book):
         return book.owns
+
+class ModelStopOrders(QAbstractTableModel):
+    '''
+    Model representing a collection of stop orders.
+    '''
+
+    def __init__(self, gox, headerdata):
+        QAbstractTableModel.__init__(self)
+        gox.stopOrders = []
+        gox.stopbot_executed.connect(self.__on_signal_executed)
+        self.gox = gox
+        self.stopOrders = self.gox.stopOrders 
+        self.__headerdata = self.headerdata = headerdata
+        self.__data = [["NO"," STOP ORDERS ","YET"]]
+        
+        self.lastsortascdesc = Qt.DescendingOrder
+        self.lastsortcol = 0
+
+    
+    def changed(self):
+        self.__slot_changed()
+
+    def __on_signal_executed(self, order, dummy_data2):
+        self.stopOrders.remove(order)
+        self.__slot_changed()
+
+    def __slot_changed(self):
+        self.__data = self.__parse_data()
+        self.emit(SIGNAL("layoutChanged()"))
+        self.sort(self.lastsortcol,self.lastsortascdesc)
+
+    def __parse_data(self):
+        '''Parse the own user order book'''
+        data_in = self.stopOrders
+        data_out = []
+        count = 1
+        for x in data_in:
+            
+            oid = count
+            size = x[1]
+            price = x[2]
+  
+            data_out.append([oid,size,price])
+            count += 1
+        return data_out
+    
+    def get(self,row,col):
+        return self.__data[row][col]
+    
+    def rowCount(self, parent):
+        return len(self.__data)
+
+    def columnCount(self, parent):
+        return len(self.__headerdata)
+    
+    
+    def data(self, index, role):
+  
+        if role == Qt.TextAlignmentRole:
+            return Qt.AlignRight | Qt.AlignVCenter
+  
+        if (not index.isValid()) or (role != Qt.DisplayRole):
+            return QVariant()
+  
+        row = index.row()
+        col = index.column()
+    
+        return QVariant(self.__data[row][col])
+        
+
+    def headerData(self, col, orientation, role):
+        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+            return QVariant(self.__headerdata[col])
+        return QVariant()
+    
+    def sort(self, Ncol, order):
+        """Sort table by given column number.  """
+        self.emit(SIGNAL("layoutAboutToBeChanged()"))
+        self.__data = sorted(self.__data, key=operator.itemgetter(Ncol))        
+        if order == Qt.DescendingOrder:
+            self.__data.reverse()
+        self.emit(SIGNAL("layoutChanged()"))
+        self.lastsortcol = Ncol
+        self.lastsortascdesc = order
+    # END Qt methods
+        
+class ModelStops(ModelStopOrders):
+
+    def __init__(self, gox):
+        ModelStopOrders.__init__(self, gox, ['ID #','Size '+BTCS,'Price $'])
