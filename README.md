@@ -10,11 +10,13 @@ goxgui is a Qt front end for [prof7bit's goxtool](http://prof7bit.github.io/goxt
 
 Features
 --------
-
-* Display asks / bids
+* Stop-Loss market sell orders (new tab)
+* Display User Orders (new tab)
+* Display asks / bids (Order Book tab)
 * Display MtGox account balance (USD/BTC)
 * Display MtGox lag
 * Place and cancel orders (USD)
+
 
 Prerequisites
 -------------
@@ -34,6 +36,8 @@ Installation from Source
 Please note: **you must make sure all prerequisites above are installed first **, otherwise the application will not work.
 
     git clone --recursive git://github.com/genbtc/goxgui.git
+
+or download the zip file and extract the whole structure to a new directory.
 
 Then run the program by:
 
