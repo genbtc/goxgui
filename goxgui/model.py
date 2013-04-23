@@ -11,7 +11,9 @@ class Model(QAbstractTableModel):
     '''
     Model representing a collection of orders.
     '''
-
+    # orders smaller than this value will be grouped
+    GROUP_ORDERS = 0.6
+    
     def __init__(self, gox, headerdata):
         QAbstractTableModel.__init__(self)
         self.gox = gox
@@ -43,7 +45,7 @@ class Model(QAbstractTableModel):
             vwap += price * size
 
             total += size
-            if vsize > float2internal(0.6):         #ignore anything BELOW this volume and cumulate it into the next.
+            if vsize > float2internal(self.GROUP_ORDERS):         #ignore anything BELOW this volume and cumulate it into the next.
                 vwap = gox2internal(vwap/vsize, 'USD')
                 vsize = gox2internal(vsize,'BTC')
                 total = gox2internal(total,'BTC')
@@ -136,9 +138,9 @@ class ModelUserOwn(QAbstractTableModel):
     def __init__(self, gox, headerdata):
         QAbstractTableModel.__init__(self)
         self.gox = gox
-        self.gox.orderbook.ownorders_changed.connect(self.__slot_changed)
+        self.gox.orderbook.signal_owns_changed.connect(self.__slot_changed)
         self.__headerdata = self.headerdata = headerdata
-        self.__data = [["xxxx",1E14,1E12,"xxxxxxxx","xxxxxxxxxxNO USER ORDER DATAxxxxxxxxxxx"]]
+        self.__data = [["---",1E14,1E11,"NOT","AUTHENTICATED. NO USER ORDER DATA."]]
         
         self.lastsortascdesc = Qt.DescendingOrder
         self.lastsortcol = 1
@@ -195,14 +197,6 @@ class ModelUserOwn(QAbstractTableModel):
     def columnCount(self, parent):
         return len(self.__headerdata)
 
-    
-#     def data(self, index, role): 
-#         if not index.isValid(): 
-#             return QVariant() 
-#         elif role != Qt.DisplayRole: 
-#             return QVariant() 
-#         return QVariant(self.__data[index.row()][index.column()]) 
-    
     def data(self, index, role):
   
         if role == Qt.TextAlignmentRole:
@@ -224,9 +218,6 @@ class ModelUserOwn(QAbstractTableModel):
             return QVariant(self.get_status(row))
         if col == 4:
             return QVariant(self.get_oid(row))                
-#          
-        # if col == 3:
-            # return QVariant(internal2str(self.get_sum_total(row), 5))
 
     def headerData(self, col, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
@@ -243,7 +234,7 @@ class ModelUserOwn(QAbstractTableModel):
         self.emit(SIGNAL("layoutChanged()"))
         self.lastsortcol = Ncol
         self.lastsortascdesc = order
-    # END Qt methods
+
         
 class ModelOwns(ModelUserOwn):
 
@@ -306,8 +297,7 @@ class ModelStopOrders(QAbstractTableModel):
 
     def columnCount(self, parent):
         return len(self.__headerdata)
-    
-    
+        
     def data(self, index, role):
   
         if role == Qt.TextAlignmentRole:
@@ -321,7 +311,6 @@ class ModelStopOrders(QAbstractTableModel):
     
         return QVariant(self.__data[row][col])
         
-
     def headerData(self, col, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
             return QVariant(self.__headerdata[col])
@@ -336,7 +325,6 @@ class ModelStopOrders(QAbstractTableModel):
         self.emit(SIGNAL("layoutChanged()"))
         self.lastsortcol = Ncol
         self.lastsortascdesc = order
-    # END Qt methods
         
 class ModelStops(ModelStopOrders):
 
