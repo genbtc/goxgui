@@ -31,16 +31,19 @@ goxtool will be downloaded with goxgui, so you don't need to install it manually
 Installation from Source
 ------------
 
-Please note: **you must make sure all prerequisites are installed**, otherwise the application will not work.
+Please note: **you must make sure all prerequisites above are installed first **, otherwise the application will not work.
 
-    git clone --recursive git://github.com/sebastianhaberey/goxgui.git
+    git clone --recursive git://github.com/genbtc/goxgui.git
+
+Then run the program by:
+
     cd goxgui/run
     chmod 755 ./start_linux.sh
-    ./start_linux.sh # or start_mac.sh, start_win.bat
+    ./start_linux.sh             # not on linux? leave out the above line and run ./start_mac.sh or start_win.bat
 
 Windows EXE
 ----------------
-The goxgui.exe is a compiled verson, and should work fine (although there is no icon...)
+The goxgui.exe is a pre-compiled binary verson, and should work fine (although there is no icon...)
 
 Requests
 --------
