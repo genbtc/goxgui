@@ -308,11 +308,14 @@ class View(QMainWindow):
             #if everything is OK, set the placeholder text to show credentials were loaded OK
             self.mainWindow.lineEditKey.setPlaceholderText('Loaded Key From File')
             self.mainWindow.lineEditSecret.setPlaceholderText('Decrypted Secret Using Password')
-        #and switch current tab back to the main Account Balance Tab
-        self.mainWindow.tabWidget_1.setCurrentIndex(0)
-        if not savedPassword:       #check for default password. if not, restart the socket.
-            self.status_message("Credentials changed. Restarting MtGox Client")
-            self.restart_gox()      #restart the gox socket.
+            #and switch current tab back to the main Account Balance Tab
+            self.mainWindow.tabWidget_1.setCurrentIndex(0)
+            if not savedPassword:       #check for default password. if not, restart the socket.
+                self.status_message("Credentials changed. Restarting MtGox Client")
+                self.restart_gox()      #restart the gox socket.
+        else:
+            self.status_message("Key and Secret are blank. Enter them and click Apply.")
+            self.mainWindow.tabWidget_1.setCurrentIndex(1)
         
     def display_wallet(self):
         self.set_wallet_usd(utilities.gox2internal(self.gox.wallet['USD'], 'USD'))
