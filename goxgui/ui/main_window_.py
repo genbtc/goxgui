@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'main_window.ui'
 #
-# Created: Mon Apr 22 23:41:09 2013
+# Created: Tue Apr 23 07:50:55 2013
 #      by: PyQt4 UI code generator 4.10
 #
 # WARNING! All changes made in this file will be lost!
@@ -486,6 +486,7 @@ class Ui_MainWindow(object):
         self.retranslateUi(MainWindow)
         self.tabWidget_1.setCurrentIndex(0)
         self.tabWidget_2.setCurrentIndex(0)
+        QtCore.QObject.connect(self.passwordLineEdit, QtCore.SIGNAL(_fromUtf8("returnPressed()")), self.passwordButton.animateClick)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
         MainWindow.setTabOrder(self.doubleSpinBoxBtc, self.doubleSpinBoxPrice)
         MainWindow.setTabOrder(self.doubleSpinBoxPrice, self.doubleSpinBoxTotal)

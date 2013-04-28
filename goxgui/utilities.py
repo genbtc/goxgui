@@ -2,7 +2,7 @@ import base64
 import hashlib
 import binascii
 from Crypto.Cipher import AES
-
+from decimal import Decimal as D
 
 # factor internal representation / regular float
 FACTOR_FLOAT = 100000000
@@ -16,6 +16,58 @@ FACTOR_GOX_JPY = 100000
 # factor internal representation / gox (USD)
 FACTOR_GOX_USD = 1000
 
+
+class goxnum(object):
+    def __init__(self):
+        self.value = None
+        self.cur = None
+        self.btc = 1E8
+        self.usd = 1E5
+        self.jpy = 1E3
+                
+    @property
+    def i(self):
+        return int(self.value)
+    
+    @i.setter
+    def i(self,(value,currency)):
+        if currency == "BTC":
+            value *= self.btc
+        elif currency == "USD":
+            value *= self.usd
+        elif currency == "JPY":
+            value *= self.jpy
+        self.value = value
+        self.cur = currency
+    
+    def s(self,decimals,value=None):
+        value = value or self.value
+        if self.cur == "BTC":
+            value /= self.btc
+        elif self.cur == "USD":
+            value /= self.usd
+        elif self.cur == "JPY":
+            value /= self.jpy
+        return ("{{:,.{0}f}}".format(decimals).format(value))
+    
+    @property
+    def f(self):
+        return float(self.value)
+    
+    @f.setter
+    def f(self,value):
+        self.value = value
+    
+    @property
+    def d(self):
+        return D(str(self.value))
+    
+    @d.setter
+    def d(self,value):
+        self.value = value
+    
+    #def refresh(self):
+        
 
 def gox2internal(value, currency):
     '''

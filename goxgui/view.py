@@ -7,7 +7,12 @@ from model import ModelAsk,ModelBid,ModelOwns,ModelStops
 import utilities
 import time
 import os
+from decimal import Decimal as D
 
+F = utilities.FACTOR_FLOAT
+B = F / utilities.FACTOR_GOX_BTC
+U = F / utilities.FACTOR_GOX_USD
+J = F / utilities.FACTOR_GOX_JPY
 
 class View(QMainWindow):
     '''
@@ -337,21 +342,18 @@ class View(QMainWindow):
     def execute_trade(self):
 
         trade_type = self.get_selected_trade_type()
-
-        size = self.get_trade_size()
-        price = self.get_trade_price()
-        total = self.get_trade_total()
+        
+        size = utilities.internal2str(self.get_trade_size())
+        price = utilities.internal2str(self.get_trade_price(), 5)
+        total = utilities.internal2str(self.get_trade_total(), 5)
 
         trade_name = 'BID' if trade_type == 'BUY' else 'ASK'
 
         self.status_message('Placing order: {0} {1} BTC at $ {2} USD (total $ {3} USD)...'.format(# @IgnorePep8
-            trade_name,
-            utilities.internal2str(size),
-            utilities.internal2str(price, 5),
-            utilities.internal2str(total, 5)))
-
-        sizeGox = utilities.internal2gox(size, 'BTC')
-        priceGox = utilities.internal2gox(price, 'USD')
+            trade_name,size,price,total))
+        
+        sizeGox = int(D(size)*B)
+        priceGox = int(D(price)*U)
 
         mapdict = {"BUY":self.gox.buy,"SELL":self.gox.sell}
         mapdict[trade_type](priceGox, sizeGox)
@@ -381,7 +383,7 @@ class View(QMainWindow):
         price = utilities.gox2internal(price, 'USD')
 
         size = utilities.internal2str(size)
-        price = utilities.internal2str(price)
+        price = utilities.internal2str(price,5)
 
         if order_type == '':
             self.status_message("Order <a href=\"{0}\">{0}</a> {1}.".format(
