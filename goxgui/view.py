@@ -403,16 +403,18 @@ class View(QMainWindow):
         self.gox.cancel(order_id)
         
     def update_edit_from_ask_book(self, index):
-        #when a order on the ask side is clicked 
+        #when a order on the ask side is clicked
+        #set the radio button to the opposite (buy) 
         self.set_trade_price(self.modelAsk.get_price(index.row()))  #set the price edit box 
         self.set_trade_size(self.modelAsk.get_size(index.row()))    #set the size edit box
-        self.set_selected_trade_type('SELL')                        #set the sell radiobutton
+        self.set_selected_trade_type('BUY')                        #set the BUY radiobutton
         
     def update_edit_from_bid_book(self, index):
         #when a order on the bids side is clicked 
+        #set the radio button to the opposite (sell)
         self.set_trade_price(self.modelBid.get_price(index.row()))  #set the price edit box
         self.set_trade_size(self.modelBid.get_size(index.row()))    #set the size edit box
-        self.set_selected_trade_type('BUY')                         #set the buy radiobutton
+        self.set_selected_trade_type('SELL')                         #set the SELL radiobutton
        
     def update_edit_on_button(self):
         #When Price button is clicked, fill in the edit boxes, 

@@ -31,36 +31,53 @@ class goxnum(object):
     
     @i.setter
     def i(self,(value,currency)):
-        if currency == "BTC":
+        self.cur = currency
+        if self.cur == "BTC":
             value *= self.btc
-        elif currency == "USD":
+        elif self.cur == "USD":
             value *= self.usd
-        elif currency == "JPY":
+        elif self.cur == "JPY":
             value *= self.jpy
         self.value = value
-        self.cur = currency
+        
     
     def s(self,decimals,value=None):
-        value = value or self.value
+        tempvalue = value or self.value
         if self.cur == "BTC":
-            value /= self.btc
+            tempvalue /= self.btc
         elif self.cur == "USD":
-            value /= self.usd
+            tempvalue /= self.usd
         elif self.cur == "JPY":
-            value /= self.jpy
-        return ("{{:,.{0}f}}".format(decimals).format(value))
+            tempvalue /= self.jpy
+        return ("{{:,.{0}f}}".format(decimals).format(tempvalue))
     
     @property
     def f(self):
-        return float(self.value)
+        tempvalue = self.value
+        if self.cur == "BTC":
+            tempvalue /= self.btc
+        elif self.cur == "USD":
+            tempvalue /= self.usd
+        elif self.cur == "JPY":
+            tempvalue /= self.jpy
+        return float(tempvalue)
     
     @f.setter
     def f(self,value):
         self.value = value
+        self.cur = None
     
     @property
     def d(self):
-        return D(str(self.value))
+        tempvalue = self.value
+        if self.cur == "BTC":
+            tempvalue /= self.btc
+        elif self.cur == "USD":
+            tempvalue /= self.usd
+        elif self.cur == "JPY":
+            tempvalue /= self.jpy        
+        
+        return D(str(tempvalue))
     
     @d.setter
     def d(self,value):
