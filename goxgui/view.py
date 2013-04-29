@@ -111,7 +111,7 @@ class View(QMainWindow):
         self.mainWindow.checkBoxActivateStopLossBot.clicked.connect(self.stopbot_act_deact)
         
         #for stuff in the Ticker TAB
-        self.mainWindow.pushButtonRefreshTicker.released.connect(self.display_ticker)
+        self.mainWindow.pushButtonRefreshTicker.released.connect(self.refresh_and_display_ticker)
         self.mainWindow.checkBoxAutoRefreshTicker.clicked.connect(self.autorefresh_ticker_selected)
         
         
