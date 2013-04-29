@@ -8,6 +8,8 @@ import utilities
 import time
 import os
 from decimal import Decimal as D
+from goxapi import http_request,HTTP_HOST,Timer
+import json
 
 F = utilities.FACTOR_FLOAT
 B = F / utilities.FACTOR_GOX_BTC
@@ -53,7 +55,7 @@ class View(QMainWindow):
         self.adaptor.signal_wallet.connect(self.display_wallet)
         self.adaptor.signal_orderlag.connect(self.display_orderlag)
         self.adaptor.signal_userorder.connect(self.display_userorder)
-        self.adaptor.signal_ticker.connect(self.slot_ticker)
+        self.adaptor.signal_ticker.connect(self.update_titlebar)
 
         # initialize and connect bid / ask table models
         self.modelAsk = ModelAsk(self.gox)
@@ -108,11 +110,100 @@ class View(QMainWindow):
         #activate the stop loss bot with the checkbox.
         self.mainWindow.checkBoxActivateStopLossBot.clicked.connect(self.stopbot_act_deact)
         
+        #for stuff in the Ticker TAB
+        self.mainWindow.pushButtonRefreshTicker.released.connect(self.display_ticker)
+        self.mainWindow.checkBoxAutoRefreshTicker.clicked.connect(self.autorefresh_ticker_selected)
+        
         
         self.show()
         self.raise_()
+        
+        self.initialize_ticker()
+        self.refresh_and_display_ticker()
 
+    def initialize_ticker(self):
+        use_ssl = self.gox.config.get_bool("gox", "use_ssl")
+        proto = {True: "https", False: "http"}[use_ssl]
+        currency = self.gox.currency
+        class Ticker(object):
+            def __init__(self):
+                self.buy = None
+                self.sell = None
+                self.last = None
+                self.volume = None
+                self.high = None
+                self.low = None
+                self.avg = None
+                self.vwap = None
+                self.refresh_both()
+            def refresh_both(self):
+                self.refresh_ticker2()
+                self.refresh_tickerfast()
+            def refresh_tickerfast(self):
+                ticker_fast = http_request(proto + "://" +  HTTP_HOST + "/api/2/BTC" + currency + "/money/ticker_fast")
+                self.ticker_fast = json.loads(ticker_fast)["data"]
+                self.create_fast(self.ticker_fast)                
+            def refresh_ticker2(self):
+                ticker2 = http_request(proto + "://" +  HTTP_HOST + "/api/2/BTC" + currency + "/money/ticker")
+                self.ticker2 = json.loads(ticker2)["data"]
+                self.create_ticker2(self.ticker2)
+            def create_fast(self,ticker_fast):
+                self.buy = ticker_fast["buy"]["value"]
+                self.sell = ticker_fast["sell"]["value"]
+                self.last = ticker_fast["last"]["value"]
+            def create_ticker2(self,ticker2):
+                self.buy = ticker2["buy"]["value"]
+                self.sell = ticker2["sell"]["value"]
+                self.last = ticker2["last"]["value"]
+                self.volume = ticker2["vol"]["value"]
+                self.volumestr = ticker2["vol"]["display"]
+                self.high = ticker2["high"]["value"]
+                self.low = ticker2["low"]["value"]
+                self.avg = ticker2["avg"]["value"]
+                self.vwap = ticker2["avg"]["value"]
 
+        self.ticker = Ticker() 
+        
+        
+    def display_ticker(self):
+        
+        if not self.ticker.ticker_fast.get("error"):
+            self.mainWindow.lineEdit1Buy.setText("$" + self.ticker.buy)
+            self.mainWindow.lineEdit2Sell.setText("$" + self.ticker.sell)
+            self.mainWindow.lineEdit3Last.setText("$" + self.ticker.last)
+        else:
+            self.mainWindow.lineEdit1Buy.setText("Error")
+            self.mainWindow.lineEdit2Sell.setText("Error")
+            self.mainWindow.lineEdit3Last.setText("Error")
+
+        if not self.ticker.ticker2.get("error"):
+            self.mainWindow.lineEdit4Volume.setText(self.ticker.volumestr)
+            self.mainWindow.lineEdit5High.setText("$" + self.ticker.high)
+            self.mainWindow.lineEdit6Low.setText("$" + self.ticker.low)
+            self.mainWindow.lineEdit7Avg.setText("$" + self.ticker.avg)
+            self.mainWindow.lineEdit8VWAP.setText("$" + self.ticker.vwap)
+        else:
+            self.mainWindow.lineEdit4Volume.setText("Error")
+            self.mainWindow.lineEdit5High.setText("Error")
+            self.mainWindow.lineEdit6Low.setText("Error")
+            self.mainWindow.lineEdit7Avg.setText("Error")
+            self.mainWindow.lineEdit8VWAP.setText("Error")
+            
+
+    def refresh_and_display_ticker(self,dummy_1=None,dummy_2=None):
+        self.ticker.refresh_both()
+        self.display_ticker()
+                    
+    def autorefresh_ticker_selected(self):
+        if self.mainWindow.checkBoxAutoRefreshTicker.isChecked():
+            interval = self.mainWindow.spinBoxAutoRefreshTicker.value()
+            self.ticker_refresh_timer = Timer(interval)
+            self.ticker_refresh_timer.connect(self.refresh_and_display_ticker)
+        else:
+            if self.ticker_refresh_timer:
+                self.ticker_refresh_timer.cancel()
+        
+        
     def add_stopOrder(self):
         size = float(self.mainWindow.lineEdit1StopSize.text())  #read from input boxes
         price = float(self.mainWindow.lineEdit2StopPrice.text())
@@ -138,9 +229,13 @@ class View(QMainWindow):
         else:
             self.gox.stopbot_active = False             #or disable it.
 
-    def slot_ticker(self,bid,ask):
-        #change the title to match any updates from the ticker channel
-        newtitle = "MtGox Trading UI - Bid: {0}, Ask: {1}".format(bid/1E5,ask/1E5)
+    def update_titlebar(self,bid,ask):
+        #change the title bar to match any updates from the ticker channel
+        try:
+            volstring = ", Vol: " + self.ticker.volumestr[:-4] + " BTC" #has some strange unicode char in it.
+        except:
+            volstring = ""
+        newtitle = "MtGox Trading UI - Bid: {0}, Ask: {1}{2}".format(bid/1E5,ask/1E5,volstring)
         self.setWindowTitle(QApplication.translate("MainWindow", newtitle, None, QApplication.UnicodeUTF8))
         
     def restart_gox(self):
@@ -242,6 +337,10 @@ class View(QMainWindow):
         self.set_order_id(str(url.toString()))
         
     def userorder_selected(self, index):
+        mapdict = {"ask":"SELL","bid":"BUY"}
+        self.set_selected_trade_type(mapdict[self.modelOwns.get_typ(index.row())])
+        self.set_trade_price(self.modelOwns.get_price(index.row()))
+        self.set_trade_size(self.modelOwns.get_size(index.row()))
         self.set_order_id(self.modelOwns.get_oid(index.row()))
 
     def save_credentials(self):
