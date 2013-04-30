@@ -1,6 +1,7 @@
 import base64
 import hashlib
 import binascii
+import os
 from Crypto.Cipher import AES
 from decimal import Decimal as D
 
@@ -15,6 +16,7 @@ FACTOR_GOX_JPY = 100000
 
 # factor internal representation / gox (USD)
 FACTOR_GOX_USD = 1000
+
 
 
 class goxnum(object):
@@ -211,3 +213,12 @@ def assert_valid_key(key):
     hex_key = key.replace("-", "").encode("ascii")
     if len(binascii.unhexlify(hex_key)) != 16:
         raise Exception("key has wrong size")
+
+def resource_path(relative):
+    return os.path.join(
+        os.environ.get(
+            "_MEIPASS2",
+            os.path.abspath(".")
+        ),
+        relative
+    )

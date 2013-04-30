@@ -20,15 +20,13 @@
     MA 02110-1301, USA.
 
 '''
-
-import os
 import sys
 
 from PyQt4.QtGui import QIcon
 from PyQt4.QtGui import QApplication
 from PyQt4.QtCore import SIGNAL
 from view import View
-
+from utilities import resource_path
 import goxapi
 import stoploss
             
@@ -67,14 +65,7 @@ class Application(QApplication):
         self.logfile.close()
 
 
-def resource_path(relative):
-    return os.path.join(
-        os.environ.get(
-            "_MEIPASS2",
-            os.path.abspath(".")
-        ),
-        relative
-    )
+
 
 if __name__ == '__main__':
     app = Application(sys.argv)

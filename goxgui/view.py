@@ -36,9 +36,14 @@ class View(QMainWindow):
         self.gox = gox
         self.secret = secret
         
-        #lazy users can pre-fill in this passphrase setting, and it will auto-load 
-        # PREVIOUSLY SAVED credentials from the .ini file
-        self.passphrase = ''
+        #lazy users can create a section in the goxtool ini file such as : 
+        #[goxgui]
+        #password = XXXXXXXX
+        #and it will decrypt the saved credentials also in the ini file with this password
+        try:
+            self.passphrase = self.gox.config.get("goxgui", "password")
+        except:
+            self.passphrase = ""
         if self.passphrase:
             self.load_credentials(passphrase=self.passphrase)
             
@@ -160,7 +165,7 @@ class View(QMainWindow):
                 self.high = ticker2["high"]["value"]
                 self.low = ticker2["low"]["value"]
                 self.avg = ticker2["avg"]["value"]
-                self.vwap = ticker2["avg"]["value"]
+                self.vwap = ticker2["vwap"]["value"]
 
         self.ticker = Ticker() 
         

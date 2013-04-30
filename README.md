@@ -1,4 +1,4 @@
-﻿goxgui - forked by genBTC
+﻿goxgui - forked by genBTC (updated 4/30/2013)
 ======
 
 About
@@ -10,9 +10,10 @@ goxgui is a Qt front end for [prof7bit's goxtool](http://prof7bit.github.io/goxt
 
 Features
 --------
-* Stop-Loss market sell orders (new tab)
+* Create Stop-Loss market sell orders (new tab)
 * Display User Orders (new tab)
 * Display asks / bids (Order Book tab)
+* Ticker in Title bar (and new Ticker Tab with auto-refresh)
 * Display MtGox account balance (USD/BTC)
 * Display MtGox lag
 * Place and cancel orders (USD)
@@ -50,6 +51,35 @@ Windows EXE
 The goxgui.exe is a pre-compiled binary verson, and should work fine (although there is no icon...)
 [Download Link](https://raw.github.com/genbtc/goxgui/master/goxgui.exe)
 
+
+API Key/Secret & Password
+--------------------------
+The API key and Secret, are encrypted in the .ini file. Previously the password they were encrypted with was hardcoded, not user-choosable and I found this odd (security hole). So I cobbled together the method that you see in my forked version, therefore the steps to use this functionality are somewhat sub-par in terms of intuitiveness, so heres the instructions.
+
+1) Download the fork from https://github.com/genbtc/goxgui
+
+2) The program will generate a new blank config file on first run. (Don't try to import the old one)
+
+3) Click the "Authentication" Tab, enter your API Key and Secret
+
+4) Click the "Password" Tab, enter your Password of your own choosing.
+
+5) Go BACK to the "Authentication" Tab, and hit Apply.
+
+6) The program will encrypt the API Key/Secret and store it in the INI file.
+
+7) Each Next time you want to open up the program, you will have to click the password tab, enter your Password, and hit "Decrypt".
+
+I Have just implemented a "lazy-version" of this. Once You have done initial Steps 1-6 above, You can edit the "goxtool.ini" file and add the following, replacing XXXXX with your chosen password:
+
+[goxgui]
+
+password = XXXXXXXXXXXX
+
+
+This will store your password, and auto-login everytime you launch it next time.
+
+
 Requests
 --------
 
@@ -66,3 +96,4 @@ Disclaimer
 ----------
 
 This software is provided “as is," and you use the software at your own risk. 
+The menu Tools/Options/Settings is non-functional, and is to be implemented at a later date.
