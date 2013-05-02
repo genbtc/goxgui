@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'main_window.ui'
 #
-# Created: Sun Apr 28 21:11:58 2013
+# Created: Tue Apr 30 09:54:08 2013
 #      by: PyQt4 UI code generator 4.10
 #
 # WARNING! All changes made in this file will be lost!
@@ -217,6 +217,9 @@ class Ui_MainWindow(object):
         self.lineEditOrder.setFont(font)
         self.lineEditOrder.setObjectName(_fromUtf8("lineEditOrder"))
         self.horizontalLayout_8.addWidget(self.lineEditOrder)
+        self.checkBoxCancelAll = QtGui.QCheckBox(self.groupBoxTrading)
+        self.checkBoxCancelAll.setObjectName(_fromUtf8("checkBoxCancelAll"))
+        self.horizontalLayout_8.addWidget(self.checkBoxCancelAll)
         self.pushButtonCancel = QtGui.QPushButton(self.groupBoxTrading)
         self.pushButtonCancel.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
         self.pushButtonCancel.setObjectName(_fromUtf8("pushButtonCancel"))
@@ -640,6 +643,7 @@ class Ui_MainWindow(object):
         self.pushButtonGo.setText(_translate("MainWindow", "Go!", None))
         self.lineEditOrder.setToolTip(_translate("MainWindow", "Paste order ID here or click link above", None))
         self.lineEditOrder.setPlaceholderText(_translate("MainWindow", "Order ID", None))
+        self.checkBoxCancelAll.setText(_translate("MainWindow", "All ?", None))
         self.pushButtonCancel.setToolTip(_translate("MainWindow", "Cancels the order with the specified ID", None))
         self.pushButtonCancel.setText(_translate("MainWindow", "Cancel Order", None))
         self.tabWidget_2.setTabText(self.tabWidget_2.indexOf(self.tabWidgetOrderBook), _translate("MainWindow", "Order Book", None))

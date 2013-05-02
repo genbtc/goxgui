@@ -501,10 +501,14 @@ class View(QMainWindow):
                 self.set_order_id(oid)
 
     def cancel_order(self):
-        order_id = self.get_order_id()
-        self.status_message(
-            "Cancelling order <a href=\"{0}\">{0}</a>...".format(order_id))
-        self.gox.cancel(order_id)
+        if self.mainWindow.checkBoxCancelAll.isChecked():
+            self.gox.cancel_by_type()
+            self.mainWindow.checkBoxCancelAll.setChecked(False)
+        else:
+            order_id = self.get_order_id()
+            self.status_message(
+                "Cancelling order <a href=\"{0}\">{0}</a>...".format(order_id))
+            self.gox.cancel(order_id)
         
     def update_edit_from_ask_book(self, index):
         #when a order on the ask side is clicked
