@@ -1,9 +1,11 @@
 import base64
 import hashlib
 import binascii
-import os
 from Crypto.Cipher import AES
-from decimal import Decimal as D
+import sys
+import os
+import platform
+
 
 # factor internal representation / regular float
 FACTOR_FLOAT = 100000000
@@ -17,76 +19,9 @@ FACTOR_GOX_JPY = 100000
 # factor internal representation / gox (USD)
 FACTOR_GOX_USD = 1000
 
+# this symbol will be used as bitcoin symbol
+BITCOIN_SYMBOL = unichr(3647)
 
-
-class goxnum(object):
-    def __init__(self):
-        self.value = None
-        self.cur = None
-        self.btc = 1E8
-        self.usd = 1E5
-        self.jpy = 1E3
-                
-    @property
-    def i(self):
-        return int(self.value)
-    
-    @i.setter
-    def i(self,(value,currency)):
-        self.cur = currency
-        if self.cur == "BTC":
-            value *= self.btc
-        elif self.cur == "USD":
-            value *= self.usd
-        elif self.cur == "JPY":
-            value *= self.jpy
-        self.value = value
-        
-    
-    def s(self,decimals,value=None):
-        tempvalue = value or self.value
-        if self.cur == "BTC":
-            tempvalue /= self.btc
-        elif self.cur == "USD":
-            tempvalue /= self.usd
-        elif self.cur == "JPY":
-            tempvalue /= self.jpy
-        return ("{{:,.{0}f}}".format(decimals).format(tempvalue))
-    
-    @property
-    def f(self):
-        tempvalue = self.value
-        if self.cur == "BTC":
-            tempvalue /= self.btc
-        elif self.cur == "USD":
-            tempvalue /= self.usd
-        elif self.cur == "JPY":
-            tempvalue /= self.jpy
-        return float(tempvalue)
-    
-    @f.setter
-    def f(self,value):
-        self.value = value
-        self.cur = None
-    
-    @property
-    def d(self):
-        tempvalue = self.value
-        if self.cur == "BTC":
-            tempvalue /= self.btc
-        elif self.cur == "USD":
-            tempvalue /= self.usd
-        elif self.cur == "JPY":
-            tempvalue /= self.jpy        
-        
-        return D(str(tempvalue))
-    
-    @d.setter
-    def d(self,value):
-        self.value = value
-    
-    #def refresh(self):
-        
 
 def gox2internal(value, currency):
     '''
@@ -94,9 +29,9 @@ def gox2internal(value, currency):
     (see https://en.bitcoin.it/wiki/MtGox/API)
     into the application's internal format.
     '''
-    if currency == "BTC":
+    if currency == 'BTC':
         return value * FACTOR_GOX_BTC
-    if currency == "JPY":
+    if currency == 'JPY':
         return value * FACTOR_GOX_JPY
     else:
         return value * FACTOR_GOX_USD
@@ -106,9 +41,9 @@ def internal2gox(value, currency):
     '''
     Converts the specified value from internal format to gox format
     '''
-    if currency == "BTC":
+    if currency == 'BTC':
         return value / FACTOR_GOX_BTC
-    if currency == "JPY":
+    if currency == 'JPY':
         return value / FACTOR_GOX_JPY
     else:
         return value / FACTOR_GOX_USD
@@ -118,7 +53,7 @@ def float2str(value, decimals=8):
     '''
     Returns currency float formatted as a string.
     '''
-    return ("{{:,.{0}f}}".format(decimals).format(value))
+    return ('{{:,.{0}f}}'.format(decimals).format(value))
 
 
 def internal2float(value):
@@ -162,15 +97,15 @@ def encrypt(secret, password):
     '''
 
     # pylint: disable=E1101
-    hashed_pass = hashlib.sha512(password.encode("utf-8")).digest()
+    hashed_pass = hashlib.sha512(password.encode('utf-8')).digest()
     crypt_key = hashed_pass[:32]
     crypt_ini = hashed_pass[-16:]
     aes = AES.new(crypt_key, AES.MODE_OFB, crypt_ini)
 
     # since the secret is a base64 string we can just just pad it with
     # spaces which can easily be stripped again after decryping
-    secret += " " * (16 - len(secret) % 16)
-    return base64.b64encode(aes.encrypt(secret)).decode("ascii")
+    secret += ' ' * (16 - len(secret) % 16)
+    return base64.b64encode(aes.encrypt(secret)).decode('ascii')
 
 
 def decrypt(secret, password):
@@ -179,22 +114,22 @@ def decrypt(secret, password):
     throws exception in case of failure.
     '''
 
-    if secret == "":
-        raise Exception("secret cannot be empty")
+    if secret == '':
+        raise Exception('secret cannot be empty')
 
     # pylint: disable=E1101
-    hashed_pass = hashlib.sha512(password.encode("utf-8")).digest()
+    hashed_pass = hashlib.sha512(password.encode('utf-8')).digest()
     crypt_key = hashed_pass[:32]
     crypt_ini = hashed_pass[-16:]
     aes = AES.new(crypt_key, AES.MODE_OFB, crypt_ini)
-    encrypted_secret = base64.b64decode(secret.strip().encode("ascii"))
+    encrypted_secret = base64.b64decode(secret.strip().encode('ascii'))
     secret = aes.decrypt(encrypted_secret).strip()
 
     # is it plain ascii? (if not this will raise exception)
-    dummy = secret.decode("ascii")
+    dummy = secret.decode('ascii')
     # can it be decoded? correct size afterwards?
     if len(base64.b64decode(secret)) != 64:
-        raise Exception("decrypted secret has wrong size")
+        raise Exception('decrypted secret has wrong size')
 
     return secret
 
@@ -205,20 +140,39 @@ def assert_valid_key(key):
     throws an exception otherwise.
     '''
 
-    if key == "":
-        raise Exception("key cannot be empty")
+    if key == '':
+        raise Exception('key cannot be empty')
 
     # key must be only hex digits and have the right size
     key = key.strip()
-    hex_key = key.replace("-", "").encode("ascii")
+    hex_key = key.replace('-', '').encode('ascii')
     if len(binascii.unhexlify(hex_key)) != 16:
-        raise Exception("key has wrong size")
+        raise Exception('key has wrong size')
 
-def resource_path(relative):
-    return os.path.join(
-        os.environ.get(
-            "_MEIPASS2",
-            os.path.abspath(".")
-        ),
-        relative
-    )
+
+def assert_valid_secret(secret):
+    '''
+    Asserts that the specified secret is valid,
+    throws an exception otherwise.
+    '''
+    result = decrypt(encrypt(secret, 'foo'), 'foo')
+    if result != secret:
+        raise Exception('encryption / decryption test failed.')
+
+
+def resource_path(relative_path):
+    """ Get absolute path to resource, works for dev and for PyInstaller """
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = getattr(sys, '_MEIPASS2', os.getcwd())
+    except Exception:
+        base_path = os.path.abspath(".")
+
+    return os.path.join(base_path, relative_path)
+
+
+def platform_is_mac():
+    '''
+    Returns true if the current platform is mac.
+    '''
+    return platform.system() == 'Darwin'

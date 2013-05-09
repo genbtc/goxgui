@@ -12,8 +12,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>759</width>
-    <height>724</height>
+    <width>760</width>
+    <height>701</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -21,15 +21,6 @@
   </property>
   <property name="locale">
    <locale language="English" country="UnitedStates"/>
-  </property>
-  <property name="iconSize">
-   <size>
-    <width>24</width>
-    <height>24</height>
-   </size>
-  </property>
-  <property name="tabShape">
-   <enum>QTabWidget::Rounded</enum>
   </property>
   <widget class="QWidget" name="widgetMain">
    <property name="enabled">
@@ -43,219 +34,117 @@
    </property>
    <layout class="QVBoxLayout" name="verticalLayout_2">
     <property name="spacing">
-     <number>6</number>
+     <number>2</number>
+    </property>
+    <property name="leftMargin">
+     <number>9</number>
     </property>
     <property name="topMargin">
      <number>4</number>
+    </property>
+    <property name="rightMargin">
+     <number>9</number>
     </property>
     <property name="bottomMargin">
      <number>0</number>
     </property>
     <item alignment="Qt::AlignTop">
-     <widget class="QTabWidget" name="tabWidget_1">
-      <property name="sizePolicy">
-       <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-        <horstretch>0</horstretch>
-        <verstretch>0</verstretch>
-       </sizepolicy>
+     <widget class="QGroupBox" name="groupBoxAccount">
+      <property name="title">
+       <string>Account</string>
       </property>
-      <property name="currentIndex">
-       <number>0</number>
+      <property name="flat">
+       <bool>true</bool>
       </property>
-      <widget class="QWidget" name="tabWidgetAccountPage1">
-       <attribute name="title">
-        <string>Account Balance</string>
-       </attribute>
-       <layout class="QHBoxLayout" name="horizontalLayout">
-        <item>
-         <widget class="QPushButton" name="pushButtonWalletA">
-          <property name="enabled">
-           <bool>false</bool>
-          </property>
-          <property name="minimumSize">
-           <size>
-            <width>200</width>
-            <height>0</height>
-           </size>
-          </property>
-          <property name="toolTip">
-           <string>Push to use this value</string>
-          </property>
-          <property name="text">
-           <string>BTC</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <spacer name="horizontalSpacer_4">
-          <property name="orientation">
-           <enum>Qt::Horizontal</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>0</width>
-            <height>0</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
-        <item>
-         <widget class="QLabel" name="labelOrderlag">
-          <property name="toolTip">
-           <string>MtGox trading lag (how long it takes for an order to be executed)</string>
-          </property>
-          <property name="text">
-           <string/>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <spacer name="horizontalSpacer_2">
-          <property name="orientation">
-           <enum>Qt::Horizontal</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>0</width>
-            <height>0</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
-        <item>
-         <widget class="QPushButton" name="pushButtonWalletB">
-          <property name="enabled">
-           <bool>false</bool>
-          </property>
-          <property name="minimumSize">
-           <size>
-            <width>200</width>
-            <height>0</height>
-           </size>
-          </property>
-          <property name="toolTip">
-           <string>Push to use this value</string>
-          </property>
-          <property name="text">
-           <string>USD</string>
-          </property>
-         </widget>
-        </item>
-       </layout>
-      </widget>
-      <widget class="QGroupBox" name="tabWidgetAuthPage2">
-       <property name="flat">
-        <bool>false</bool>
+      <layout class="QHBoxLayout" name="horizontalLayout">
+       <property name="spacing">
+        <number>0</number>
        </property>
-       <attribute name="title">
-        <string>Authentication</string>
-       </attribute>
-       <layout class="QHBoxLayout" name="horizontalLayout_2">
-        <item>
-         <widget class="QLineEdit" name="lineEditKey">
-          <property name="font">
-           <font>
-            <family>Monaco</family>
-            <pointsize>8</pointsize>
-           </font>
-          </property>
-          <property name="focusPolicy">
-           <enum>Qt::ClickFocus</enum>
-          </property>
-          <property name="toolTip">
-           <string>Insert your MtGox key here</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignCenter</set>
-          </property>
-          <property name="placeholderText">
-           <string>Key</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QLineEdit" name="lineEditSecret">
-          <property name="font">
-           <font>
-            <family>Monaco</family>
-            <pointsize>8</pointsize>
-           </font>
-          </property>
-          <property name="focusPolicy">
-           <enum>Qt::ClickFocus</enum>
-          </property>
-          <property name="toolTip">
-           <string>Insert your MtGox secret here</string>
-          </property>
-          <property name="inputMethodHints">
-           <set>Qt::ImhNoAutoUppercase|Qt::ImhNoPredictiveText</set>
-          </property>
-          <property name="echoMode">
-           <enum>QLineEdit::PasswordEchoOnEdit</enum>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignCenter</set>
-          </property>
-          <property name="placeholderText">
-           <string>Secret</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QPushButton" name="pushButtonApply">
-          <property name="cursor">
-           <cursorShape>PointingHandCursor</cursorShape>
-          </property>
-          <property name="toolTip">
-           <string>Save this key / secret combination and use it</string>
-          </property>
-          <property name="text">
-           <string>Apply</string>
-          </property>
-         </widget>
-        </item>
-       </layout>
-      </widget>
-      <widget class="QWidget" name="tabWidgetPasswordPage3">
-       <attribute name="title">
-        <string>Password</string>
-       </attribute>
-       <widget class="QLineEdit" name="passwordLineEdit">
-        <property name="geometry">
-         <rect>
-          <x>255</x>
-          <y>5</y>
-          <width>211</width>
-          <height>31</height>
-         </rect>
-        </property>
-        <property name="echoMode">
-         <enum>QLineEdit::Password</enum>
-        </property>
-        <property name="alignment">
-         <set>Qt::AlignCenter</set>
-        </property>
-        <property name="placeholderText">
-         <string>Enter your Password</string>
-        </property>
-       </widget>
-       <widget class="QPushButton" name="passwordButton">
-        <property name="geometry">
-         <rect>
-          <x>490</x>
-          <y>10</y>
-          <width>75</width>
-          <height>23</height>
-         </rect>
-        </property>
-        <property name="text">
-         <string>DeCrypt</string>
-        </property>
-        <property name="flat">
-         <bool>false</bool>
-        </property>
-       </widget>
-      </widget>
+       <property name="margin">
+        <number>0</number>
+       </property>
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout_2">
+         <property name="spacing">
+          <number>0</number>
+         </property>
+         <item>
+          <widget class="QPushButton" name="pushButtonWalletA">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+           <property name="minimumSize">
+            <size>
+             <width>200</width>
+             <height>0</height>
+            </size>
+           </property>
+           <property name="toolTip">
+            <string>Push to use this value</string>
+           </property>
+           <property name="text">
+            <string>BTC</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <spacer name="horizontalSpacer_4">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>0</width>
+             <height>0</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item>
+          <widget class="QLabel" name="labelOrderlag">
+           <property name="toolTip">
+            <string>MtGox trading lag (how long it takes for an order to be executed)</string>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <spacer name="horizontalSpacer_2">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>0</width>
+             <height>0</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item>
+          <widget class="QPushButton" name="pushButtonWalletB">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+           <property name="minimumSize">
+            <size>
+             <width>200</width>
+             <height>0</height>
+            </size>
+           </property>
+           <property name="toolTip">
+            <string>Push to use this value</string>
+           </property>
+           <property name="text">
+            <string>USD</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+      </layout>
      </widget>
     </item>
     <item>
@@ -270,10 +159,7 @@
        <bool>false</bool>
       </property>
       <layout class="QVBoxLayout" name="verticalLayout">
-       <property name="topMargin">
-        <number>0</number>
-       </property>
-       <property name="bottomMargin">
+       <property name="margin">
         <number>0</number>
        </property>
        <item>
@@ -287,13 +173,13 @@
          <property name="maximumSize">
           <size>
            <width>16777215</width>
-           <height>64</height>
+           <height>80</height>
           </size>
          </property>
          <property name="font">
           <font>
-           <family>Monaco</family>
-           <pointsize>10</pointsize>
+           <family>Segoe UI</family>
+           <pointsize>9</pointsize>
           </font>
          </property>
          <property name="cursor" stdset="0">
@@ -474,12 +360,6 @@
         <layout class="QHBoxLayout" name="horizontalLayout_8">
          <item>
           <widget class="QLineEdit" name="lineEditOrder">
-           <property name="font">
-            <font>
-             <family>Monaco</family>
-             <pointsize>11</pointsize>
-            </font>
-           </property>
            <property name="toolTip">
             <string>Paste order ID here or click link above</string>
            </property>
@@ -539,13 +419,12 @@
           </property>
           <property name="minimumSize">
            <size>
-            <width>240</width>
-            <height>110</height>
+            <width>356</width>
+            <height>120</height>
            </size>
           </property>
           <property name="font">
            <font>
-            <family>Monaco</family>
             <pointsize>11</pointsize>
            </font>
           </property>
@@ -554,9 +433,6 @@
           </property>
           <property name="frameShape">
            <enum>QFrame::WinPanel</enum>
-          </property>
-          <property name="lineWidth">
-           <number>1</number>
           </property>
           <property name="verticalScrollBarPolicy">
            <enum>Qt::ScrollBarAlwaysOn</enum>
@@ -583,10 +459,10 @@
            <bool>false</bool>
           </property>
           <attribute name="horizontalHeaderDefaultSectionSize">
-           <number>110</number>
+           <number>108</number>
           </attribute>
           <attribute name="horizontalHeaderMinimumSectionSize">
-           <number>80</number>
+           <number>108</number>
           </attribute>
           <attribute name="horizontalHeaderStretchLastSection">
            <bool>true</bool>
@@ -612,13 +488,12 @@
           </property>
           <property name="minimumSize">
            <size>
-            <width>240</width>
-            <height>110</height>
+            <width>356</width>
+            <height>120</height>
            </size>
           </property>
           <property name="font">
            <font>
-            <family>Monaco</family>
             <pointsize>11</pointsize>
            </font>
           </property>
@@ -656,10 +531,10 @@
            <bool>false</bool>
           </property>
           <attribute name="horizontalHeaderDefaultSectionSize">
-           <number>110</number>
+           <number>108</number>
           </attribute>
           <attribute name="horizontalHeaderMinimumSectionSize">
-           <number>80</number>
+           <number>108</number>
           </attribute>
           <attribute name="horizontalHeaderStretchLastSection">
            <bool>true</bool>
@@ -1189,14 +1064,46 @@
         <number>0</number>
        </property>
        <item row="0" column="0">
-        <layout class="QGridLayout" name="gridLayout">
-         <property name="topMargin">
-          <number>6</number>
-         </property>
-         <item row="1" column="0">
-          <widget class="QCheckBox" name="tickerCheckBox">
-           <property name="cursor">
-            <cursorShape>ArrowCursor</cursorShape>
+        <layout class="QVBoxLayout" name="verticalLayout_4">
+         <item>
+          <widget class="QCheckBox" name="checkBoxLogTrade">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Maximum" vsizetype="Minimum">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="text">
+            <string>System</string>
+           </property>
+           <property name="checked">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QCheckBox" name="checkBoxLogSystem">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Maximum" vsizetype="Minimum">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="text">
+            <string>Trade</string>
+           </property>
+           <property name="checked">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QCheckBox" name="checkBoxLogTicker">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Maximum" vsizetype="Minimum">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
            </property>
            <property name="text">
             <string>Ticker</string>
@@ -1206,23 +1113,13 @@
            </property>
           </widget>
          </item>
-         <item row="2" column="0">
-          <widget class="QCheckBox" name="tradesCheckBox">
-           <property name="cursor">
-            <cursorShape>ArrowCursor</cursorShape>
-           </property>
-           <property name="text">
-            <string>Trades</string>
-           </property>
-           <property name="checked">
-            <bool>true</bool>
-           </property>
-          </widget>
-         </item>
-         <item row="3" column="0">
-          <widget class="QCheckBox" name="depthCheckBox">
-           <property name="cursor">
-            <cursorShape>ArrowCursor</cursorShape>
+         <item>
+          <widget class="QCheckBox" name="checkBoxLogDepth">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Maximum" vsizetype="Minimum">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
            </property>
            <property name="text">
             <string>Depth</string>
@@ -1231,73 +1128,6 @@
             <bool>true</bool>
            </property>
           </widget>
-         </item>
-         <item row="0" column="0">
-          <widget class="QCheckBox" name="systemCheckBox">
-           <property name="text">
-            <string>System</string>
-           </property>
-           <property name="checked">
-            <bool>true</bool>
-           </property>
-          </widget>
-         </item>
-         <item row="5" column="0">
-          <widget class="QPushButton" name="pushbuttonResetSocket">
-           <property name="palette">
-            <palette>
-             <active>
-              <colorrole role="ButtonText">
-               <brush brushstyle="SolidPattern">
-                <color alpha="255">
-                 <red>255</red>
-                 <green>0</green>
-                 <blue>0</blue>
-                </color>
-               </brush>
-              </colorrole>
-             </active>
-             <inactive>
-              <colorrole role="ButtonText">
-               <brush brushstyle="SolidPattern">
-                <color alpha="255">
-                 <red>255</red>
-                 <green>0</green>
-                 <blue>0</blue>
-                </color>
-               </brush>
-              </colorrole>
-             </inactive>
-             <disabled>
-              <colorrole role="ButtonText">
-               <brush brushstyle="SolidPattern">
-                <color alpha="255">
-                 <red>120</red>
-                 <green>120</green>
-                 <blue>120</blue>
-                </color>
-               </brush>
-              </colorrole>
-             </disabled>
-            </palette>
-           </property>
-           <property name="text">
-            <string>Restart Socket</string>
-           </property>
-          </widget>
-         </item>
-         <item row="4" column="0">
-          <spacer name="horizontalSpacer">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>40</width>
-             <height>15</height>
-            </size>
-           </property>
-          </spacer>
          </item>
         </layout>
        </item>
@@ -1312,12 +1142,12 @@
          <property name="maximumSize">
           <size>
            <width>16777215</width>
-           <height>140</height>
+           <height>120</height>
           </size>
          </property>
          <property name="font">
           <font>
-           <family>Monaco</family>
+           <family>Times New Roman</family>
            <pointsize>10</pointsize>
           </font>
          </property>
@@ -1346,27 +1176,21 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>759</width>
+     <width>760</width>
      <height>21</height>
     </rect>
    </property>
-   <widget class="QMenu" name="menuTools">
-    <property name="title">
-     <string>Tools</string>
-    </property>
-   </widget>
    <widget class="QMenu" name="menuOptions">
     <property name="title">
      <string>Options</string>
     </property>
-    <addaction name="actionSettings"/>
+    <addaction name="actionPreferences_2"/>
    </widget>
-   <addaction name="menuTools"/>
    <addaction name="menuOptions"/>
   </widget>
-  <action name="actionSettings">
+  <action name="actionPreferences_2">
    <property name="text">
-    <string>Settings</string>
+    <string>Preferences</string>
    </property>
   </action>
  </widget>
@@ -1375,26 +1199,7 @@
   <tabstop>doubleSpinBoxPrice</tabstop>
   <tabstop>doubleSpinBoxTotal</tabstop>
   <tabstop>lineEditOrder</tabstop>
-  <tabstop>lineEditKey</tabstop>
-  <tabstop>lineEditSecret</tabstop>
  </tabstops>
  <resources/>
- <connections>
-  <connection>
-   <sender>passwordLineEdit</sender>
-   <signal>returnPressed()</signal>
-   <receiver>passwordButton</receiver>
-   <slot>animateClick()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>371</x>
-     <y>67</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>538</x>
-     <y>68</y>
-    </hint>
-   </hints>
-  </connection>
- </connections>
+ <connections/>
 </ui>

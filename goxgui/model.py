@@ -1,56 +1,63 @@
 from PyQt4.QtCore import QAbstractTableModel
-import operator
 from PyQt4.QtCore import Qt
 from PyQt4.QtCore import QVariant
 from PyQt4.QtCore import SIGNAL
-from utilities import *
+import utilities
 import abc
-
+import operator
 
 class Model(QAbstractTableModel):
     '''
     Model representing a collection of orders.
     '''
+
     # orders smaller than this value will be grouped
     GROUP_ORDERS = 0.6
-    
-    def __init__(self, gox, headerdata):
-        QAbstractTableModel.__init__(self)
-        self.gox = gox
-        self.gox.orderbook.signal_changed.connect(self.__slot_changed)
-        self.__headerdata = self.headerdata = headerdata
+
+    def __init__(self, parent, market, headerdata):
+        QAbstractTableModel.__init__(self, parent)
+        self.__market = market
+        self.__market.signal_orderbook_changed.connect(self.slot_changed)
+        self.__headerdata = headerdata
         self.__data = []
 
-    def __slot_changed(self, book, dummy_data):
-        self.__data = self.__parse_data(book)
+    # start slots
+
+    def slot_changed(self, orderbook):
+        self.__data = self.__parse_data(orderbook)
         self.emit(SIGNAL("layoutChanged()"))
+
+    # end slots
 
     def __parse_data(self, book):
         '''
         Parses the incoming data from gox,
-        converts money values to our internal
-        money format
+        converts money values to our internal money format.
         '''
         data_in = self._get_data_from_book(book)
         data_out = []
 
         total = 0
-        count = 1; vwap = 0; vsize = 0
+        count = 1
+        vwap = 0
+        vsize = 0
         for x in data_in:
 
             price = x.price
             size = x.volume
-            
+
             vsize += size
             vwap += price * size
 
             total += size
-            if vsize > float2internal(self.GROUP_ORDERS):         #ignore anything BELOW this volume and cumulate it into the next.
-                vwap = gox2internal(vwap/vsize, 'USD')
-                vsize = gox2internal(vsize,'BTC')
-                total = gox2internal(total,'BTC')
+            if vsize > utilities.float2internal(self.GROUP_ORDERS):
+                vwap = utilities.gox2internal(vwap / vsize, 'USD')
+                vsize = utilities.gox2internal(vsize, 'BTC')
+                total = utilities.gox2internal(total, 'BTC')
                 data_out.append([vwap, vsize, total])
-                count = 1; vwap = 0; vsize = 0
+                count = 1
+                vwap = 0
+                vsize = 0
             else:
                 count += 1
 
@@ -73,9 +80,6 @@ class Model(QAbstractTableModel):
     def get_total(self, index):
         return self.__data[index][2]
 
-    # def get_sum_total(self, index):
-        # return self.__data[index][3]
-
     # START Qt methods
 
     def rowCount(self, parent):
@@ -96,13 +100,11 @@ class Model(QAbstractTableModel):
         col = index.column()
 
         if col == 0:
-            return QVariant(internal2str(self.get_price(row), 5))
+            return QVariant(utilities.internal2str(self.get_price(row), 5))
         if col == 1:
-            return QVariant(internal2str(self.get_size(row)))
+            return QVariant(utilities.internal2str(self.get_size(row)))
         if col == 2:
-            return QVariant(internal2str(self.get_total(row), 5))
-        # if col == 3:
-            # return QVariant(internal2str(self.get_sum_total(row), 5))
+            return QVariant(utilities.internal2str(self.get_total(row)))
 
     def headerData(self, col, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
@@ -111,12 +113,12 @@ class Model(QAbstractTableModel):
 
     # END Qt methods
 
-BTCS = BitcoinSymbol = unichr(3647)
- 
+
 class ModelAsk(Model):
 
-    def __init__(self, gox):
-        Model.__init__(self, gox, ['Ask $', 'Size '+BTCS, 'Total '+BTCS])
+    def __init__(self, parent, market):
+        Model.__init__(self, parent, market, ['Ask $', 'Size ' + utilities.BITCOIN_SYMBOL,
+            'Total ' + utilities.BITCOIN_SYMBOL])
 
     def _get_data_from_book(self, book):
         return book.asks
@@ -124,8 +126,9 @@ class ModelAsk(Model):
 
 class ModelBid(Model):
 
-    def __init__(self, gox):
-        Model.__init__(self, gox, ['Bid $', 'Size '+BTCS, 'Total '+BTCS])
+    def __init__(self, parent, market):
+        Model.__init__(self, parent, market, ['Bid $', 'Size ' + utilities.BITCOIN_SYMBOL,
+            'Total ' + utilities.BITCOIN_SYMBOL])
 
     def _get_data_from_book(self, book):
         return book.bids
@@ -135,17 +138,17 @@ class ModelUserOwn(QAbstractTableModel):
     Model representing a collection of orders.
     '''
 
-    def __init__(self, gox, headerdata):
-        QAbstractTableModel.__init__(self)
-        self.gox = gox
-        self.gox.orderbook.signal_owns_changed.connect(self.__slot_changed)
-        self.__headerdata = self.headerdata = headerdata
+    def __init__(self, parent, market, headerdata):
+        QAbstractTableModel.__init__(self, parent)
+        self.__market = market
+        self.__market.signal_owns_changed.connect(self.__slot_changed)
+        self.__headerdata = headerdata
         self.__data = [["---",1E14,1E11,"NOT","AUTHENTICATED. NO USER ORDER DATA."]]
         
         self.lastsortascdesc = Qt.DescendingOrder
         self.lastsortcol = 1
 
-    def __slot_changed(self, book, dummy_data):
+    def __slot_changed(self, book):
         self.__data = self.__parse_data(book)
         self.emit(SIGNAL("layoutChanged()"))
         self.sort(self.lastsortcol,self.lastsortascdesc)
@@ -157,8 +160,8 @@ class ModelUserOwn(QAbstractTableModel):
 
         for x in data_in:
 
-            price = gox2internal(x.price,'USD')
-            size = gox2internal(x.volume,'BTC')
+            price = utilities.gox2internal(x.price,'USD')
+            size = utilities.gox2internal(x.volume,'BTC')
             typ = x.typ
             oid = x.oid
             status = x.status 
@@ -211,9 +214,9 @@ class ModelUserOwn(QAbstractTableModel):
         if col == 0:
             return QVariant(self.get_typ(row))
         if col == 1:
-            return QVariant(internal2str(self.get_price(row), 5))
+            return QVariant(utilities.internal2str(self.get_price(row), 5))
         if col == 2:
-            return QVariant(internal2str(self.get_size(row)))
+            return QVariant(utilities.internal2str(self.get_size(row)))
         if col == 3:
             return QVariant(self.get_status(row))
         if col == 4:
@@ -238,8 +241,8 @@ class ModelUserOwn(QAbstractTableModel):
         
 class ModelOwns(ModelUserOwn):
 
-    def __init__(self, gox):
-        ModelUserOwn.__init__(self, gox, ['Type','Price','Size','Status','Order ID'])
+    def __init__(self, parent, market):
+        ModelUserOwn.__init__(self, parent, market, ['Type','Price','Size','Status','Order ID'])
 
     def _get_data_from_book(self, book):
         return book.owns
@@ -249,13 +252,12 @@ class ModelStopOrders(QAbstractTableModel):
     Model representing a collection of stop orders.
     '''
 
-    def __init__(self, gox, headerdata):
-        QAbstractTableModel.__init__(self)
-        gox.stopOrders = []
-        gox.stopbot_executed.connect(self.__on_signal_executed)
-        self.gox = gox
-        self.stopOrders = self.gox.stopOrders 
-        self.__headerdata = self.headerdata = headerdata
+    def __init__(self, parent, market, headerdata):
+        QAbstractTableModel.__init__(self, parent)
+        self.__market = market
+        self.stopOrders = self.__market.stopOrders = []
+        self.__market.signal_stopbot_executed.connect(self.__on_signal_executed)
+        self.__headerdata = headerdata
         self.__data = [["NO"," STOP ORDERS ","YET"]]
         
         self.lastsortascdesc = Qt.DescendingOrder
@@ -328,5 +330,5 @@ class ModelStopOrders(QAbstractTableModel):
         
 class ModelStops(ModelStopOrders):
 
-    def __init__(self, gox):
-        ModelStopOrders.__init__(self, gox, ['ID #','Size '+BTCS,'Price $'])
+    def __init__(self, parent, market):
+        ModelStopOrders.__init__(self, parent, market, ['ID #','Size '+utilities.BITCOIN_SYMBOL,'Price $'])

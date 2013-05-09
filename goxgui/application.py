@@ -20,16 +20,19 @@
     MA 02110-1301, USA.
 
 '''
+
+import logging
 import sys
+import utilities
 
 from PyQt4.QtGui import QIcon
 from PyQt4.QtGui import QApplication
 from PyQt4.QtCore import SIGNAL
 from view import View
-from utilities import resource_path
-import goxapi
-import stoploss
-            
+from market import Market
+from preferences import Preferences
+
+
 class Application(QApplication):
     '''
     The main application class where the main objects
@@ -38,36 +41,29 @@ class Application(QApplication):
 
     def __init__(self, *args):
 
-        self.logfile = open('log.txt', 'w')
-
         QApplication.__init__(self, *args)
 
-        # initialize model (gox)
-        #goxapi.FORCE_PROTOCOL = 'socketio'
-        self.config = goxapi.GoxConfig("goxtool.ini")
-        self.secret = goxapi.Secret(self.config)
-        self.gox = goxapi.Gox(self.secret, self.config)
+        # initialize logging
+        logging.basicConfig(filename='log.txt', level=logging.INFO,
+            format='%(asctime)s %(message)s')
+        logging.info("Starting application.")
 
-        
-        self.strategy_object = stoploss.Strategy(self.gox)
-                
+        # initialize user preferences
+        preferences = Preferences()
+
+        # initialize model
+        market = Market(preferences)
+
         # initialize view
-        self.view = View(self.gox, self.secret, self.logfile)
-        self.view.log('Starting application.')
+        self.view = View(preferences, market)
 
-        # start connection to MtGox
-        self.gox.start()
-        
         self.connect(self, SIGNAL('lastWindowClosed()'), self.__quit)
 
     def __quit(self):
-        self.gox.stop()
-        self.logfile.close()
-
-
+        self.view.stop()
 
 
 if __name__ == '__main__':
     app = Application(sys.argv)
-    app.setWindowIcon(QIcon(resource_path('bitcoin.png')))
+    app.setWindowIcon(QIcon(utilities.resource_path('bitcoin.png')))
     app.exec_()

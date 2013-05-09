@@ -1,235 +1,200 @@
-from PyQt4.QtGui import QMainWindow
-from PyQt4.QtGui import QTextCursor
-from PyQt4.QtGui import QApplication
-from adaptor import Adaptor
-from ui.main_window_ import Ui_MainWindow
-from model import ModelAsk,ModelBid,ModelOwns,ModelStops
 import utilities
 import time
-import os
-from decimal import Decimal as D
-from goxapi import http_request,HTTP_HOST,Timer
-import json
+import logging
 
-F = utilities.FACTOR_FLOAT
-B = F / utilities.FACTOR_GOX_BTC
-U = F / utilities.FACTOR_GOX_USD
-J = F / utilities.FACTOR_GOX_JPY
+from PyQt4.QtGui import QMainWindow
+from PyQt4.QtGui import QTextCursor
+from ui.main_window_ import Ui_MainWindow
+from model import ModelAsk,ModelBid,ModelOwns,ModelStops
+from PyQt4 import QtGui
+from goxapi import Timer
 
 class View(QMainWindow):
     '''
     Represents the combined view / control.
     '''
 
+    # how the application-proposed bid will differ from the selected bid
+    ADD_TO_BID = 1000
 
-    def __init__(self, gox, secret, logfile):
+    # how the application-proposed ask will differ from the selected ask
+    SUB_FROM_ASK = 1000
 
-        self.logfile = logfile
+    def __init__(self, preferences, market):
 
         QMainWindow.__init__(self)
 
-        # setup UI
-        self.mainWindow = Ui_MainWindow()
-        self.mainWindow.setupUi(self)
+        self.preferences = preferences
+        self.market = market
 
-        # setup gox objects
-        self.gox = gox
-        self.secret = secret
-        
-        #lazy users can create a section in the goxtool ini file such as : 
-        #[goxgui]
-        #password = XXXXXXXX
-        #and it will decrypt the saved credentials also in the ini file with this password
-        try:
-            self.passphrase = self.gox.config.get("goxgui", "password")
-        except:
-            self.passphrase = ""
-        if self.passphrase:
-            self.load_credentials(passphrase=self.passphrase)
-            
-        # associate log channels with their check boxes
-        self.logchannels = [
-            [self.mainWindow.tickerCheckBox, 'tick'],
-            [self.mainWindow.tradesCheckBox, 'trade'],
-            [self.mainWindow.depthCheckBox, 'depth'],
-        ]
-        
-        # connect to gox signals
-        self.adaptor = Adaptor(self.gox)
-        self.adaptor.signal_log.connect(self.log)
-        self.adaptor.signal_wallet.connect(self.display_wallet)
-        self.adaptor.signal_orderlag.connect(self.display_orderlag)
-        self.adaptor.signal_userorder.connect(self.display_userorder)
-        self.adaptor.signal_ticker.connect(self.update_titlebar)
+        # set up main window
+        self.ui = Ui_MainWindow()
+        self.ui.setupUi(self)
+
+        # improve ui on mac
+        if utilities.platform_is_mac():
+            self.adjust_for_mac()
+
+        # connect market signals to our logic
+        self.market.signal_log.connect(self.slot_log)
+        self.market.signal_wallet.connect(self.display_wallet)
+        self.market.signal_orderlag.connect(self.display_orderlag)
+        self.market.signal_userorder.connect(self.display_userorder)
+        self.market.signal_ticker.connect(self.update_titlebar)
+
+        # connect ui signals to our logic
+        self.ui.pushButtonGo.released.connect(self.execute_trade)
+        self.ui.tableAsk.clicked.connect(self.update_edit_from_ask_book)
+        self.ui.tableBid.clicked.connect(self.update_edit_from_bid_book)
+        self.ui.pushButtonCancel.released.connect(self.cancel_order)       
+        #enable clicking of OrderID links in the Trading textBrowser
+        self.ui.textBrowserStatus.anchorClicked.connect(self.order_selected)
+        self.ui.pushButtonWalletA.released.connect(self.set_trade_size_from_wallet)
+        self.ui.pushButtonWalletB.released.connect(self.set_trade_total_from_wallet)
+        self.ui.pushButtonSize.released.connect(self.recalculate_size)
+        self.ui.pushButtonPrice.released.connect(self.update_edit_on_button)
+        self.ui.pushButtonTotal.released.connect(self.recalculate_total)
+        self.ui.actionPreferences_2.triggered.connect(self.show_preferences)
 
         # initialize and connect bid / ask table models
-        self.modelAsk = ModelAsk(self.gox)
-        self.mainWindow.tableAsk.setModel(self.modelAsk)
-        self.modelBid = ModelBid(self.gox)
-        self.mainWindow.tableBid.setModel(self.modelBid)
+        self.modelAsk = ModelAsk(self, self.market)
+        self.ui.tableAsk.setModel(self.modelAsk)
+        self.modelBid = ModelBid(self, self.market)
+        self.ui.tableBid.setModel(self.modelBid)
 
-        # connect signals from UI Qt components to our own slots
-        #Account Balance TAB
-        self.mainWindow.pushButtonWalletA.released.connect(self.set_trade_size_from_wallet)
-        self.mainWindow.pushButtonWalletB.released.connect(self.set_trade_total_from_wallet)
-
-        #Auth TAB
-        self.mainWindow.pushButtonApply.released.connect(self.save_credentials)
-        #Password TAB
-        self.mainWindow.passwordButton.released.connect(self.load_credentials)
-        
-        #OrderBook TAB
-        self.mainWindow.tableAsk.clicked.connect(self.update_edit_from_ask_book)
-        self.mainWindow.tableBid.clicked.connect(self.update_edit_from_bid_book)
-        
+        # associate log channels with their check boxes
+        self.logchannels = [
+            [self.ui.checkBoxLogTicker, 'tick'],
+            [self.ui.checkBoxLogTrade, 'trade'],
+            [self.ui.checkBoxLogDepth, 'depth'],
+        ]
+ 
         #User Orders TAB
-        self.modelOwns = ModelOwns(self.gox)
-        self.mainWindow.tableUserOrders.setModel(self.modelOwns)
-        self.mainWindow.tableUserOrders.resizeColumnsToContents()
-        self.mainWindow.tableUserOrders.clicked.connect(self.userorder_selected)
-        
-        #Trading Box
-        self.mainWindow.pushButtonGo.released.connect(self.execute_trade)
-        self.mainWindow.pushButtonCancel.released.connect(self.cancel_order)
-        self.mainWindow.pushButtonSize.released.connect(self.recalculate_size)
-        self.mainWindow.pushButtonPrice.released.connect(self.update_edit_on_button)
-        self.mainWindow.pushButtonTotal.released.connect(self.recalculate_total)
-        
-        #enable clicking of OrderID links in the Trading textBrowser
-        self.mainWindow.textBrowserStatus.anchorClicked.connect(self.order_selected)
-        
-        #reset the mtgox socketIO socket when button is pushed.
-        self.mainWindow.pushbuttonResetSocket.released.connect(self.restart_gox)
-        
+        self.modelOwns = ModelOwns(self, self.market)
+        self.ui.tableUserOrders.setModel(self.modelOwns)
+        self.ui.tableUserOrders.resizeColumnsToContents()
+        self.ui.tableUserOrders.clicked.connect(self.userorder_selected)
+       
         #create the stop orders TAB.
-        self.modelStops = ModelStops(self.gox)
-        self.mainWindow.tableStopOrders.setModel(self.modelStops)
-        self.mainWindow.tableStopOrders.resizeColumnsToContents()
+        self.modelStops = ModelStops(self, self.market)
+        self.ui.tableStopOrders.setModel(self.modelStops)
+        self.ui.tableStopOrders.resizeColumnsToContents()
 
         #add stop orders into the stop database
-        self.mainWindow.pushButton1StopAdd.released.connect(self.add_stopOrder)
+        self.ui.pushButton1StopAdd.released.connect(self.add_stopOrder)
         #on click, put Stop Order ID into the cancel button box.
-        self.mainWindow.tableStopOrders.clicked.connect(self.stopOrder_selected)
+        self.ui.tableStopOrders.clicked.connect(self.stopOrder_selected)
         #remove a stop order
-        self.mainWindow.pushButtonStopRemove.released.connect(self.remove_stopOrder)
+        self.ui.pushButtonStopRemove.released.connect(self.remove_stopOrder)
         #activate the stop loss bot with the checkbox.
-        self.mainWindow.checkBoxActivateStopLossBot.clicked.connect(self.stopbot_act_deact)
+        self.ui.checkBoxActivateStopLossBot.clicked.connect(self.stopbot_act_deact)
         
         #for stuff in the Ticker TAB
-        self.mainWindow.pushButtonRefreshTicker.released.connect(self.refresh_and_display_ticker)
-        self.mainWindow.checkBoxAutoRefreshTicker.clicked.connect(self.autorefresh_ticker_selected)
+        self.ui.pushButtonRefreshTicker.released.connect(self.refresh_and_display_ticker)
+        self.ui.checkBoxAutoRefreshTicker.clicked.connect(self.autorefresh_ticker_selected)
+
+        # activate market
+        self.market.start()
+
+        #populate the ticker tab fields.
+        self.display_ticker()
         
-        
+        # show main window
+        self.adjustSize()
         self.show()
         self.raise_()
-        
-        self.initialize_ticker()
-        self.refresh_and_display_ticker()
 
-    def initialize_ticker(self):
-        use_ssl = self.gox.config.get_bool("gox", "use_ssl")
-        proto = {True: "https", False: "http"}[use_ssl]
-        currency = self.gox.currency
-        class Ticker(object):
-            def __init__(self):
-                self.buy = None
-                self.sell = None
-                self.last = None
-                self.volume = None
-                self.high = None
-                self.low = None
-                self.avg = None
-                self.vwap = None
-                self.refresh_both()
-            def refresh_both(self):
-                self.refresh_ticker2()
-                self.refresh_tickerfast()
-            def refresh_tickerfast(self):
-                ticker_fast = http_request(proto + "://" +  HTTP_HOST + "/api/2/BTC" + currency + "/money/ticker_fast")
-                self.ticker_fast = json.loads(ticker_fast)["data"]
-                self.create_fast(self.ticker_fast)                
-            def refresh_ticker2(self):
-                ticker2 = http_request(proto + "://" +  HTTP_HOST + "/api/2/BTC" + currency + "/money/ticker")
-                self.ticker2 = json.loads(ticker2)["data"]
-                self.create_ticker2(self.ticker2)
-            def create_fast(self,ticker_fast):
-                self.buy = ticker_fast["buy"]["value"]
-                self.sell = ticker_fast["sell"]["value"]
-                self.last = ticker_fast["last"]["value"]
-            def create_ticker2(self,ticker2):
-                self.buy = ticker2["buy"]["value"]
-                self.sell = ticker2["sell"]["value"]
-                self.last = ticker2["last"]["value"]
-                self.volume = ticker2["vol"]["value"]
-                self.volumestr = ticker2["vol"]["display"]
-                self.high = ticker2["high"]["value"]
-                self.low = ticker2["low"]["value"]
-                self.avg = ticker2["avg"]["value"]
-                self.vwap = ticker2["vwap"]["value"]
+    def adjust_for_mac(self):
+        '''
+        Fixes some stuff that looks good on windows but bad on mac.
+        '''
+        # the default fixed font is unreadable on mac, so replace it
+        font = QtGui.QFont('Monaco', 11)
+        self.ui.tableAsk.setFont(font)
+        self.ui.tableBid.setFont(font)
+        self.ui.textBrowserLog.setFont(font)
+        self.ui.textBrowserStatus.setFont(font)
+        self.ui.lineEditOrder.setFont(font)
+        self.ui.doubleSpinBoxBtc.setFont(font)
+        self.ui.doubleSpinBoxPrice.setFont(font)
+        self.ui.doubleSpinBoxTotal.setFont(font)
 
-        self.ticker = Ticker() 
+        # the space between application title bar and
+        # the ui elements is too small on mac
+        margins = self.ui.widgetMain.layout().contentsMargins()
+        margins.setTop(24)
+        self.ui.widgetMain.layout().setContentsMargins(margins)
+
+    def show_preferences(self):
+
+        result = self.preferences.show()
+        if result == True:
+            self.status_message('Preferences changed, restarting market.')
+            self.market.stop()
+            self.preferences.apply()
+            self.market.start()
+            self.status_message('Market restarted successfully.')
         
         
     def display_ticker(self):
-        
-        if not self.ticker.ticker_fast.get("error"):
-            self.mainWindow.lineEdit1Buy.setText("$" + self.ticker.buy)
-            self.mainWindow.lineEdit2Sell.setText("$" + self.ticker.sell)
-            self.mainWindow.lineEdit3Last.setText("$" + self.ticker.last)
+        if not self.market.ticker.ticker_fast.get("error"):
+            self.ui.lineEdit1Buy.setText("$" + self.market.ticker.buy)
+            self.ui.lineEdit2Sell.setText("$" + self.market.ticker.sell)
+            self.ui.lineEdit3Last.setText("$" + self.market.ticker.last)
         else:
-            self.mainWindow.lineEdit1Buy.setText("Error")
-            self.mainWindow.lineEdit2Sell.setText("Error")
-            self.mainWindow.lineEdit3Last.setText("Error")
+            self.ui.lineEdit1Buy.setText("Error")
+            self.ui.lineEdit2Sell.setText("Error")
+            self.ui.lineEdit3Last.setText("Error")
 
-        if not self.ticker.ticker2.get("error"):
-            self.mainWindow.lineEdit4Volume.setText(self.ticker.volumestr)
-            self.mainWindow.lineEdit5High.setText("$" + self.ticker.high)
-            self.mainWindow.lineEdit6Low.setText("$" + self.ticker.low)
-            self.mainWindow.lineEdit7Avg.setText("$" + self.ticker.avg)
-            self.mainWindow.lineEdit8VWAP.setText("$" + self.ticker.vwap)
+        if not self.market.ticker.ticker2.get("error"):
+            self.ui.lineEdit4Volume.setText(self.market.ticker.volumestr)
+            self.ui.lineEdit5High.setText("$" + self.market.ticker.high)
+            self.ui.lineEdit6Low.setText("$" + self.market.ticker.low)
+            self.ui.lineEdit7Avg.setText("$" + self.market.ticker.avg)
+            self.ui.lineEdit8VWAP.setText("$" + self.market.ticker.vwap)
         else:
-            self.mainWindow.lineEdit4Volume.setText("Error")
-            self.mainWindow.lineEdit5High.setText("Error")
-            self.mainWindow.lineEdit6Low.setText("Error")
-            self.mainWindow.lineEdit7Avg.setText("Error")
-            self.mainWindow.lineEdit8VWAP.setText("Error")
+            self.ui.lineEdit4Volume.setText("Error")
+            self.ui.lineEdit5High.setText("Error")
+            self.ui.lineEdit6Low.setText("Error")
+            self.ui.lineEdit7Avg.setText("Error")
+            self.ui.lineEdit8VWAP.setText("Error")
             
 
     def refresh_and_display_ticker(self,dummy_1=None,dummy_2=None):
-        self.ticker.refresh_both()
+        self.market.ticker.refresh_both()
         self.display_ticker()
                     
     def autorefresh_ticker_selected(self):
-        if self.mainWindow.checkBoxAutoRefreshTicker.isChecked():
-            interval = self.mainWindow.spinBoxAutoRefreshTicker.value()
-            self.ticker_refresh_timer = Timer(interval)
-            self.ticker_refresh_timer.connect(self.refresh_and_display_ticker)
+        if self.ui.checkBoxAutoRefreshTicker.isChecked():
+            interval = self.ui.spinBoxAutoRefreshTicker.value()
+            self.market.ticker_refresh_timer = Timer(interval)
+            self.market.ticker_refresh_timer.connect(self.refresh_and_display_ticker)
         else:
-            if self.ticker_refresh_timer:
-                self.ticker_refresh_timer.cancel()
+            if self.market.ticker_refresh_timer:
+                self.market.ticker_refresh_timer.cancel()
         
         
     def add_stopOrder(self):
-        size = float(self.mainWindow.lineEdit1StopSize.text())  #read from input boxes
-        price = float(self.mainWindow.lineEdit2StopPrice.text())
-        self.mainWindow.lineEdit1StopSize.setText('')   #set input boxes to blank again
-        self.mainWindow.lineEdit2StopPrice.setText('')
+        size = float(self.ui.lineEdit1StopSize.text())  #read from input boxes
+        price = float(self.ui.lineEdit2StopPrice.text())
+        self.ui.lineEdit1StopSize.setText('')   #set input boxes to blank again
+        self.ui.lineEdit2StopPrice.setText('')
         oid = len(self.gox.stopOrders)+1                #set OID number to a human number(OID# is actually just for us humans)
         self.gox.stopOrders.append([oid,size,price])    #add order to the list
         self.modelStops.changed()                       #trigger the changed function
 
     def stopOrder_selected(self, index):
-        self.mainWindow.lineEdit3StopID.setText(str(self.modelStops.get(index.row(),0)))        
+        self.ui.lineEdit3StopID.setText(str(self.modelStops.get(index.row(),0)))        
         
     def remove_stopOrder(self):
-        oid = self.mainWindow.lineEdit3StopID.text()    #read OID from the input box
+        oid = self.ui.lineEdit3StopID.text()    #read OID from the input box
         oid = int(oid)-1                                #change human OID to internal
-        self.mainWindow.lineEdit3StopID.setText('')     #set input box to blank
+        self.ui.lineEdit3StopID.setText('')     #set input box to blank
         self.gox.stopOrders.remove(self.gox.stopOrders[oid])    #remove order from the list
         self.modelStops.changed()                       #trigger the changed function
 
     def stopbot_act_deact(self):
-        if self.mainWindow.checkBoxActivateStopLossBot.isChecked():     #if the checkbox is active
+        if self.ui.checkBoxActivateStopLossBot.isChecked():     #if the checkbox is active
             self.gox.stopbot_active = True              #enable stop-loss bot
         else:
             self.gox.stopbot_active = False             #or disable it.
@@ -237,230 +202,136 @@ class View(QMainWindow):
     def update_titlebar(self,bid,ask):
         #change the title bar to match any updates from the ticker channel
         try:
-            volstring = ", Vol: " + self.ticker.volumestr[:-4] + " BTC" #has some strange unicode char in it.
+            volstring = ", Vol: " + self.market.ticker.volumestr[:-4] + " BTC" #has some strange unicode char in it.
         except:
             volstring = ""
         newtitle = "MtGox Trading UI - Bid: {0}, Ask: {1}{2}".format(bid/1E5,ask/1E5,volstring)
-        self.setWindowTitle(QApplication.translate("MainWindow", newtitle, None, QApplication.UnicodeUTF8))
+        self.setWindowTitle(QtGui.QApplication.translate("ui", newtitle, None, QtGui.QApplication.UnicodeUTF8))
         
-    def restart_gox(self):
-        self.gox.client.debug("Restarting MtGox SocketIO Client")
-        self.gox.client.socket.close()
-        self.gox.client.connected = False
-
     def get_selected_trade_type(self):
-        return 'BUY' if self.mainWindow.radioButtonBuy.isChecked() else 'SELL'
+        if self.ui.radioButtonBuy.isChecked():
+            return 'BUY'
+        else:
+            return 'SELL'
 
     def set_selected_trade_type(self, trade_type):
         if trade_type == 'BUY':
-            self.mainWindow.radioButtonBuy.toggle()
+            self.ui.radioButtonBuy.toggle()
         else:
-            self.mainWindow.radioButtonSell.toggle()
+            self.ui.radioButtonSell.toggle()
 
-    def log(self, text):
+    def slot_log(self, text):
+
+        logging.info(text)
         text = self.prepend_date(text)
-        self.log_to_file(text)
-        
-        doOutput = False
-        
-        for entry in self.logchannels:  
-            if not entry[0].isChecked():    #if the checkbox is unticked:
-                if entry[1] in text:        #and the message matches whichever checkbox
-                    return                  #then exit without printing anything 
-                
-        #two loops are necessary, otherwise system being unchecked 
-        #will mute the 3 other checkboxes's respective messages
-        #if we got this far, the message doesn't match any unticked boxes.
-        if self.mainWindow.systemCheckBox.isChecked():
-            doOutput = True
-        else:
-            #if the system checkbox is NOT checked, do not print anything UNLESS:                                           
-            for entry in self.logchannels:  #the message is one of the 3 "channels" in self.logchannels
-                if entry[1] in text:        
-                    doOutput = True
 
-        if doOutput:                                    #actually print it out,unless no boxes are ticked.
-            self.mainWindow.textBrowserLog.append(text)
+        doOutput = False
+
+        if self.ui.checkBoxLogSystem.isChecked():
+            doOutput = True
+
+        for entry in self.logchannels:
+            if entry[1] in text:
+                doOutput = entry[0].isChecked()
+
+        if doOutput:
+            self.ui.textBrowserLog.append(text)
 
     def prepend_date(self, text):
         millis = int(round(time.time() * 1000)) % 1000
         return '{}.{:0>3} {}'.format(time.strftime('%X'), millis, text)
 
-    def log_to_file(self, text):
-        if not self.logfile.closed:
-            self.logfile.write('{}{}'.format(text, os.linesep))
-
     def status_message(self, text):
         # call move cursor before append to work around link clicking bug
         # see: https://bugreports.qt-project.org/browse/QTBUG-539
-        self.mainWindow.textBrowserStatus.moveCursor(QTextCursor.End)
+        logging.info(text)
         text = self.prepend_date(text)
-        self.mainWindow.textBrowserStatus.append(text)
-        self.log_to_file(text)
+        self.ui.textBrowserStatus.moveCursor(QTextCursor.End)
+        self.ui.textBrowserStatus.append(text)
 
     def set_wallet_btc(self, value):
-        self.mainWindow.pushButtonWalletA.setEnabled(value > 0)
-        self.mainWindow.pushButtonWalletA.setText(
+        self.ui.pushButtonWalletA.setEnabled(value > 0)
+        self.ui.pushButtonWalletA.setText(
             'BTC: ' + utilities.internal2str(value))
 
     def set_wallet_usd(self, value):
-        self.mainWindow.pushButtonWalletB.setEnabled(value > 0)
-        self.mainWindow.pushButtonWalletB.setText(
+        self.ui.pushButtonWalletB.setEnabled(value > 0)
+        self.ui.pushButtonWalletB.setText(
             'USD: ' + utilities.internal2str(value, 5))
 
     def get_trade_size(self):
-        value = self.mainWindow.doubleSpinBoxBtc.value()
+        value = self.ui.doubleSpinBoxBtc.value()
         return utilities.float2internal(value)
 
     def set_trade_size(self, value):
         value_float = utilities.internal2float(value)
-        self.mainWindow.doubleSpinBoxBtc.setValue(value_float)
+        self.ui.doubleSpinBoxBtc.setValue(value_float)
 
     def get_trade_price(self):
-        value = self.mainWindow.doubleSpinBoxPrice.value()
+        value = self.ui.doubleSpinBoxPrice.value()
         return utilities.float2internal(value)
 
     def set_trade_price(self, value):
         value_float = utilities.internal2float(value)
-        self.mainWindow.doubleSpinBoxPrice.setValue(value_float)
+        self.ui.doubleSpinBoxPrice.setValue(value_float)
 
     def get_trade_total(self):
-        value = self.mainWindow.doubleSpinBoxTotal.value()
+        value = self.ui.doubleSpinBoxTotal.value()
         return utilities.float2internal(value)
 
     def set_trade_total(self, value):
         value_float = utilities.internal2float(value)
-        self.mainWindow.doubleSpinBoxTotal.setValue(value_float)
+        self.ui.doubleSpinBoxTotal.setValue(value_float)
 
     def get_order_id(self):
-        return str(self.mainWindow.lineEditOrder.text())
+        return str(self.ui.lineEditOrder.text())
 
     def set_order_id(self, text):
-        self.mainWindow.lineEditOrder.setText(text)
+        self.ui.lineEditOrder.setText(text)
 
     def order_selected(self, url):
         self.set_order_id(str(url.toString()))
-        
-    def userorder_selected(self, index):
-        mapdict = {"ask":"SELL","bid":"BUY"}
-        self.set_selected_trade_type(mapdict[self.modelOwns.get_typ(index.row())])
-        self.set_trade_price(self.modelOwns.get_price(index.row()))
-        self.set_trade_size(self.modelOwns.get_size(index.row()))
-        self.set_order_id(self.modelOwns.get_oid(index.row()))
 
-    def save_credentials(self):
-        '''
-        Tries to encrypt the credentials entered by the user
-        and save them to the configuration file.
-        Incomplete or inplausible credentials will not be saved.
-        '''
-        def error_message(reason):          #refactored to be a little cleaner
-            phrase = 'Credentials not saved '
-            self.status_message(phrase + reason)
-            return 0
-
-        key = str(format(self.mainWindow.lineEditKey.text()))
-        secret = str(self.mainWindow.lineEditSecret.text())
-           
-        if key == '':
-            return error_message("(empty key).")
-        if secret == '':
-            return error_message("(empty secret).")
-
-        #get the passphrase from Password Tab
-        self.passphrase = str(self.mainWindow.passwordLineEdit.text())
-        #if the user never filled in the password box, cause an error, and
-        #switch the current tab to the password tab for them to fill it in.
-        if self.passphrase == '':
-            self.mainWindow.tabWidget_1.setCurrentIndex(2)
-            return error_message("(invalid password).")
-                
-        try:
-            utilities.assert_valid_key(key)
-        except Exception:
-            return error_message("(invalid key).")
-        
-        try:
-            secret = utilities.encrypt(secret, self.passphrase)
-        except Exception:
-            return error_message("(invalid secret).")
-
-        self.gox.config.set("gox", "secret_key", key)
-        self.gox.config.set("gox", "secret_secret", secret)
-        self.gox.config.save()
-        #if everything's OK, trigger a reload of credentials(below)
-        self.load_credentials()
-
-    def load_credentials(self,passphrase=''):
-        '''
-        Tries to load the credentials from the configuration file
-        and display them to the user. If the credentials in the
-        configuration file are invalid, they will not be loaded.
-        '''
-        savedPassword = True        #a default condition is needed.
-        key = self.gox.config.get_string("gox", "secret_key")
-        secret = self.gox.config.get_string("gox", "secret_secret")
-        if not passphrase:          #if password is blank (default NOT stored)
-            savedPassword = False   #then change the default condition to False
-            #and grab password from the password tab password box.
-            self.passphrase = str(self.mainWindow.passwordLineEdit.text())
-        try:
-            utilities.assert_valid_key(key)
-            secret = utilities.decrypt(secret, self.passphrase)
-        except Exception:
-            key = ''
-            secret = ''
-
-        self.secret.key = key
-        self.secret.secret = secret
-        if not key == '' and not secret == '':
-            #if everything is OK, set the placeholder text to show credentials were loaded OK
-            self.mainWindow.lineEditKey.setPlaceholderText('Loaded Key From File')
-            self.mainWindow.lineEditSecret.setPlaceholderText('Decrypted Secret Using Password')
-            #and switch current tab back to the main Account Balance Tab
-            self.mainWindow.tabWidget_1.setCurrentIndex(0)
-            if not savedPassword:       #check for default password. if not, restart the socket.
-                self.status_message("Credentials changed. Restarting MtGox Client")
-                self.restart_gox()      #restart the gox socket.
-        else:
-            self.status_message("Key and Secret are blank. Enter them and click Apply.")
-            self.mainWindow.tabWidget_1.setCurrentIndex(1)
-        
     def display_wallet(self):
-        self.set_wallet_usd(utilities.gox2internal(self.gox.wallet['USD'], 'USD'))
-        self.set_wallet_btc(utilities.gox2internal(self.gox.wallet['BTC'], 'BTC'))
 
-#when the account balance buttons are clicked
-#set the size edit box to match
+        self.set_wallet_usd(
+            utilities.gox2internal(self.market.get_balance('USD'), 'USD'))
+        self.set_wallet_btc(
+            utilities.gox2internal(self.market.get_balance('BTC'), 'BTC'))
+
     def set_trade_size_from_wallet(self):
-        self.set_trade_size(utilities.gox2internal(self.gox.wallet['BTC'], 'BTC'))
-        self.set_selected_trade_type('SELL')        #and check the sell radiobutton
+        self.set_trade_size(
+            utilities.gox2internal(self.market.get_balance('BTC'), 'BTC'))
+        self.set_selected_trade_type('SELL')
 
     def set_trade_total_from_wallet(self):
-        self.set_trade_total(utilities.gox2internal(self.gox.wallet['USD'], 'USD'))
-        self.set_selected_trade_type('BUY')         #and check the buy radiobutton
+        self.set_trade_total(
+            utilities.gox2internal(self.market.get_balance('USD'), 'USD'))
+        self.set_selected_trade_type('BUY')
 
     def display_orderlag(self, ms, text):
-        self.mainWindow.labelOrderlag.setText('Trading Lag: ' + text)
+        self.ui.labelOrderlag.setText('Trading Lag: ' + text)
 
     def execute_trade(self):
 
         trade_type = self.get_selected_trade_type()
-        
-        size = utilities.internal2str(self.get_trade_size())
-        price = utilities.internal2str(self.get_trade_price(), 5)
-        total = utilities.internal2str(self.get_trade_total(), 5)
+
+        size = self.get_trade_size()
+        price = self.get_trade_price()
+        total = self.get_trade_total()
 
         trade_name = 'BID' if trade_type == 'BUY' else 'ASK'
 
-        self.status_message('Placing order: {0} {1} BTC at $ {2} USD (total $ {3} USD)...'.format(# @IgnorePep8
-            trade_name,size,price,total))
-        
-        sizeGox = int(D(size)*B)
-        priceGox = int(D(price)*U)
+        self.status_message('Placing order: {0} {1} BTC at {2} USD (total {3} USD)...'.format(# @IgnorePep8
+            trade_name,
+            utilities.internal2str(size),
+            utilities.internal2str(price, 5),
+            utilities.internal2str(total, 5)))
 
-        mapdict = {"BUY":self.gox.buy,"SELL":self.gox.sell}
-        mapdict[trade_type](priceGox, sizeGox)
+        if trade_type == 'BUY':
+            self.market.buy(price, size)
+        else:
+            self.market.sell(price, size)
 
     def recalculate_size(self):
         #When the size button is clicked:
@@ -499,17 +370,24 @@ class View(QMainWindow):
                 str.upper(str(order_type)), size, price, oid, status))
             if status == 'post-pending':
                 self.set_order_id(oid)
-
+                
+    def userorder_selected(self, index):
+        mapdict = {"ask":"SELL","bid":"BUY"}
+        self.set_selected_trade_type(mapdict[self.modelOwns.get_typ(index.row())])
+        self.set_trade_price(self.modelOwns.get_price(index.row()))
+        self.set_trade_size(self.modelOwns.get_size(index.row()))
+        self.set_order_id(self.modelOwns.get_oid(index.row()))
+        
     def cancel_order(self):
-        if self.mainWindow.checkBoxCancelAll.isChecked():
-            self.gox.cancel_by_type()
-            self.mainWindow.checkBoxCancelAll.setChecked(False)
+        if self.ui.checkBoxCancelAll.isChecked():
+            self.market.cancel_by_type()
+            self.ui.checkBoxCancelAll.setChecked(False)
         else:
             order_id = self.get_order_id()
             self.status_message(
                 "Cancelling order <a href=\"{0}\">{0}</a>...".format(order_id))
-            self.gox.cancel(order_id)
-        
+            self.market.cancel(order_id)
+            
     def update_edit_from_ask_book(self, index):
         #when a order on the ask side is clicked
         #set the radio button to the opposite (buy) 
@@ -537,3 +415,6 @@ class View(QMainWindow):
         #because the size button behaves normally the original way still.
         #similarly confusing having it map to the opposite side (but necessary)
         #
+
+    def stop(self):
+        self.market.stop()        
