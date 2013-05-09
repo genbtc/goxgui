@@ -4,6 +4,7 @@ import goxapi
 import utilities
 import time
 import json
+import stoploss
 
 class Market(QObject):
     '''
@@ -18,7 +19,6 @@ class Market(QObject):
     signal_orderbook_changed = pyqtSignal(object)
     signal_owns_changed = pyqtSignal(object)
     signal_ticker = pyqtSignal('long long', 'long long')
-    signal_stopbot_executed = pyqtSignal()    
 
     def __init__(self, preferences):
         QObject.__init__(self)
@@ -74,6 +74,7 @@ class Market(QObject):
         Activates the market
         '''
         self.gox = self.__create_gox()
+        self.strategy_object = stoploss.Strategy(self.gox)
         self.ticker = self.initialize_ticker()
         self.gox.start()
 

@@ -74,7 +74,10 @@ class View(QMainWindow):
         self.ui.tableUserOrders.setModel(self.modelOwns)
         self.ui.tableUserOrders.resizeColumnsToContents()
         self.ui.tableUserOrders.clicked.connect(self.userorder_selected)
-       
+
+        # activate market
+        self.market.start()
+      
         #create the stop orders TAB.
         self.modelStops = ModelStops(self, self.market)
         self.ui.tableStopOrders.setModel(self.modelStops)
@@ -92,9 +95,6 @@ class View(QMainWindow):
         #for stuff in the Ticker TAB
         self.ui.pushButtonRefreshTicker.released.connect(self.refresh_and_display_ticker)
         self.ui.checkBoxAutoRefreshTicker.clicked.connect(self.autorefresh_ticker_selected)
-
-        # activate market
-        self.market.start()
 
         #populate the ticker tab fields.
         self.display_ticker()
@@ -179,8 +179,8 @@ class View(QMainWindow):
         price = float(self.ui.lineEdit2StopPrice.text())
         self.ui.lineEdit1StopSize.setText('')   #set input boxes to blank again
         self.ui.lineEdit2StopPrice.setText('')
-        oid = len(self.gox.stopOrders)+1                #set OID number to a human number(OID# is actually just for us humans)
-        self.gox.stopOrders.append([oid,size,price])    #add order to the list
+        oid = len(self.market.gox.stopOrders)+1                #set OID number to a human number(OID# is actually just for us humans)
+        self.market.gox.stopOrders.append([oid,size,price])    #add order to the list
         self.modelStops.changed()                       #trigger the changed function
 
     def stopOrder_selected(self, index):
@@ -190,14 +190,14 @@ class View(QMainWindow):
         oid = self.ui.lineEdit3StopID.text()    #read OID from the input box
         oid = int(oid)-1                                #change human OID to internal
         self.ui.lineEdit3StopID.setText('')     #set input box to blank
-        self.gox.stopOrders.remove(self.gox.stopOrders[oid])    #remove order from the list
+        self.market.gox.stopOrders.remove(self.market.gox.stopOrders[oid])    #remove order from the list
         self.modelStops.changed()                       #trigger the changed function
 
     def stopbot_act_deact(self):
         if self.ui.checkBoxActivateStopLossBot.isChecked():     #if the checkbox is active
-            self.gox.stopbot_active = True              #enable stop-loss bot
+            self.market.gox.stopbot_active = True              #enable stop-loss bot
         else:
-            self.gox.stopbot_active = False             #or disable it.
+            self.market.gox.stopbot_active = False             #or disable it.
 
     def update_titlebar(self,bid,ask):
         #change the title bar to match any updates from the ticker channel

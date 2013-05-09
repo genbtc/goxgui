@@ -255,10 +255,10 @@ class ModelStopOrders(QAbstractTableModel):
     def __init__(self, parent, market, headerdata):
         QAbstractTableModel.__init__(self, parent)
         self.__market = market
-        self.stopOrders = self.__market.stopOrders = []
-        self.__market.signal_stopbot_executed.connect(self.__on_signal_executed)
+        self.stopOrders = self.__market.gox.stopOrders = []
+        self.__market.gox.stopbot_executed.connect(self.__on_signal_executed)
         self.__headerdata = headerdata
-        self.__data = [["NO"," STOP ORDERS ","YET"]]
+        self.__data = [["NO","  STOP ORDERS  ","YET"]]
         
         self.lastsortascdesc = Qt.DescendingOrder
         self.lastsortcol = 0

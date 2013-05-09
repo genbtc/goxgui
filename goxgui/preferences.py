@@ -23,9 +23,9 @@ class Preferences(QDialog):
         self.__ui = Ui_Preferences()
         self.__ui.setupUi(self)
 
-#         # improve ui on mac
-#         if utilities.platform_is_mac():
-#             self.__adjust_for_mac()
+        # improve ui on mac
+        if utilities.platform_is_mac():
+            self.__adjust_for_mac()
 
 
         # connect ui signals to logic
