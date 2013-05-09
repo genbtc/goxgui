@@ -1,4 +1,4 @@
-﻿goxgui - forked by genBTC (updated 4/30/2013)
+﻿goxgui - forked by genBTC (updated 5/8/2013)
 ======
 
 About
@@ -6,7 +6,7 @@ About
 
 goxgui is a Qt front end for [prof7bit's goxtool](http://prof7bit.github.io/goxtool/). This is what it looks like:
 
-![Screenshot](https://raw.github.com/genbtc/goxgui/master/genBTCScreenshot_3.png)
+![Screenshot](https://raw.github.com/genbtc/goxgui/master/genBTCScreenshot_4.png)
 
 Features
 --------
