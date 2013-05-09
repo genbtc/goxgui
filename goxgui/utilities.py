@@ -161,12 +161,15 @@ def assert_valid_secret(secret):
 
 
 def resource_path(relative_path):
-    """ Get absolute path to resource, works for dev and for PyInstaller """
+    '''
+    Get absolute path to resource, works for dev and for PyInstaller.
+    Taken from: http://stackoverflow.com/questions/7674790/bundling-data-files-with-pyinstaller-onefile # @IgnorePep8
+    '''
     try:
         # PyInstaller creates a temp folder and stores path in _MEIPASS
         base_path = getattr(sys, '_MEIPASS2', os.getcwd())
     except Exception:
-        base_path = os.path.abspath(".")
+        base_path = os.path.abspath('.')
 
     return os.path.join(base_path, relative_path)
 

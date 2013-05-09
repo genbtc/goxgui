@@ -29,7 +29,7 @@ from PyQt4.QtGui import QIcon
 from PyQt4.QtGui import QApplication
 from PyQt4.QtCore import SIGNAL
 from view import View
-from market import Market
+from market import GoxMarket
 from preferences import Preferences
 
 
@@ -52,7 +52,7 @@ class Application(QApplication):
         preferences = Preferences()
 
         # initialize model
-        market = Market(preferences)
+        market = GoxMarket(preferences)
 
         # initialize view
         self.view = View(preferences, market)

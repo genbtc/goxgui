@@ -13,13 +13,6 @@ class View(QMainWindow):
     '''
     Represents the combined view / control.
     '''
-
-    # how the application-proposed bid will differ from the selected bid
-    ADD_TO_BID = 1000
-
-    # how the application-proposed ask will differ from the selected ask
-    SUB_FROM_ASK = 1000
-
     def __init__(self, preferences, market):
 
         QMainWindow.__init__(self)
@@ -56,30 +49,30 @@ class View(QMainWindow):
         self.ui.pushButtonTotal.released.connect(self.recalculate_total)
         self.ui.actionPreferences_2.triggered.connect(self.show_preferences)
 
-        # initialize and connect bid / ask table models
-        self.modelAsk = ModelAsk(self, self.market)
-        self.ui.tableAsk.setModel(self.modelAsk)
-        self.modelBid = ModelBid(self, self.market)
-        self.ui.tableBid.setModel(self.modelBid)
-
         # associate log channels with their check boxes
         self.logchannels = [
             [self.ui.checkBoxLogTicker, 'tick'],
             [self.ui.checkBoxLogTrade, 'trade'],
             [self.ui.checkBoxLogDepth, 'depth'],
         ]
- 
+        
+        # activate market
+        self.market.start()
+        
+        # initialize and connect bid / ask table models
+        self.modelAsk = ModelAsk(self, self.market, preferences)
+        self.ui.tableAsk.setModel(self.modelAsk)
+        self.modelBid = ModelBid(self, self.market, preferences)
+        self.ui.tableBid.setModel(self.modelBid)
+
         #User Orders TAB
-        self.modelOwns = ModelOwns(self, self.market)
+        self.modelOwns = ModelOwns(self, self.market, preferences)
         self.ui.tableUserOrders.setModel(self.modelOwns)
         self.ui.tableUserOrders.resizeColumnsToContents()
         self.ui.tableUserOrders.clicked.connect(self.userorder_selected)
 
-        # activate market
-        self.market.start()
-      
         #create the stop orders TAB.
-        self.modelStops = ModelStops(self, self.market)
+        self.modelStops = ModelStops(self, self.market, preferences)
         self.ui.tableStopOrders.setModel(self.modelStops)
         self.ui.tableStopOrders.resizeColumnsToContents()
 
@@ -249,15 +242,15 @@ class View(QMainWindow):
         self.ui.textBrowserStatus.moveCursor(QTextCursor.End)
         self.ui.textBrowserStatus.append(text)
 
-    def set_wallet_btc(self, value):
+    def set_wallet_a(self, value):
         self.ui.pushButtonWalletA.setEnabled(value > 0)
         self.ui.pushButtonWalletA.setText(
-            'BTC: ' + utilities.internal2str(value))
+            self.market.curr_base + ': ' + utilities.internal2str(value))
 
-    def set_wallet_usd(self, value):
+    def set_wallet_b(self, value):
         self.ui.pushButtonWalletB.setEnabled(value > 0)
         self.ui.pushButtonWalletB.setText(
-            'USD: ' + utilities.internal2str(value, 5))
+            self.market.curr_quote + ': ' + utilities.internal2str(value, 5))
 
     def get_trade_size(self):
         value = self.ui.doubleSpinBoxBtc.value()
@@ -293,20 +286,19 @@ class View(QMainWindow):
         self.set_order_id(str(url.toString()))
 
     def display_wallet(self):
-
-        self.set_wallet_usd(
-            utilities.gox2internal(self.market.get_balance('USD'), 'USD'))
-        self.set_wallet_btc(
-            utilities.gox2internal(self.market.get_balance('BTC'), 'BTC'))
+        self.set_wallet_a(
+            utilities.gox2internal(self.market.get_balance(self.market.curr_base), self.market.curr_base))
+        self.set_wallet_b(
+            utilities.gox2internal(self.market.get_balance(self.market.curr_quote), self.market.curr_quote))
 
     def set_trade_size_from_wallet(self):
         self.set_trade_size(
-            utilities.gox2internal(self.market.get_balance('BTC'), 'BTC'))
+            utilities.gox2internal(self.market.get_balance(self.market.curr_base), self.market.curr_base))
         self.set_selected_trade_type('SELL')
 
     def set_trade_total_from_wallet(self):
         self.set_trade_total(
-            utilities.gox2internal(self.market.get_balance('USD'), 'USD'))
+            utilities.gox2internal(self.market.get_balance(self.market.curr_quote), self.market.curr_quote))
         self.set_selected_trade_type('BUY')
 
     def display_orderlag(self, ms, text):
@@ -354,8 +346,8 @@ class View(QMainWindow):
 
     def display_userorder(self, price, size, order_type, oid, status):
 
-        size = utilities.gox2internal(size, 'BTC')
-        price = utilities.gox2internal(price, 'USD')
+        size = utilities.gox2internal(size, self.market.curr_base)
+        price = utilities.gox2internal(price, self.market.curr_quote)
 
         size = utilities.internal2str(size)
         price = utilities.internal2str(price,5)

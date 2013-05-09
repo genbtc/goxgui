@@ -6,7 +6,7 @@ import time
 import json
 import stoploss
 
-class Market(QObject):
+class GoxMarket(QObject):
     '''
     Wrapper for gox object used to decouple gui code
     from market implementation.
@@ -40,6 +40,8 @@ class Market(QObject):
         gox.orderbook.signal_owns_changed.connect(self.slot_owns_changed)        
         gox.signal_ticker.connect(self.slot_ticker)
         
+        self.curr_base = gox.curr_base          #BTC
+        self.curr_quote = gox.curr_quote        #USD
         return gox
 
     # start slots
@@ -90,16 +92,16 @@ class Market(QObject):
         '''
         Places buy order
         '''
-        sizeGox = utilities.internal2gox(size, 'BTC')
-        priceGox = utilities.internal2gox(price, 'USD')
+        sizeGox = utilities.internal2gox(size, self.curr_base)
+        priceGox = utilities.internal2gox(price, self.curr_quote)
         self.gox.buy(priceGox, sizeGox)
 
     def sell(self, price, size):
         '''
         Places sell order
         '''
-        sizeGox = utilities.internal2gox(size, 'BTC')
-        priceGox = utilities.internal2gox(price, 'USD')
+        sizeGox = utilities.internal2gox(size, self.curr_base)
+        priceGox = utilities.internal2gox(price, self.curr_quote)
         self.gox.sell(priceGox, sizeGox)
 
     def cancel(self, order_id):
@@ -113,8 +115,6 @@ class Market(QObject):
         Cancels order by type
         '''
         self.gox.cancel_by_type(typ)
-                
-
 
     def get_balance(self, currency):
         '''
@@ -125,8 +125,8 @@ class Market(QObject):
     def initialize_ticker(self):
         use_ssl = self.gox.config.get_bool("gox", "use_ssl")
         proto = {True: "https", False: "http"}[use_ssl]
-        bcur = self.gox.curr_base
-        qcur = self.gox.curr_quote
+        bcur = self.curr_base
+        qcur = self.curr_quote
         class Ticker(object):
             def __init__(self):
                 self.buy = None
@@ -142,7 +142,7 @@ class Market(QObject):
                 self.refresh_ticker2()
                 self.refresh_tickerfast()
             def refresh_tickerfast(self):
-                ticker_fast = goxapi.http_request(proto + "://" +  goxapi.HTTP_HOST + "/api/2/" +  bcur + qcur + "/money/ticker_fast")
+                ticker_fast = goxapi.http_request(proto + "://" +  goxapi.HTTP_HOST + "/api/2/" + bcur + qcur + "/money/ticker_fast")
                 self.ticker_fast = json.loads(ticker_fast)["data"]
                 self.create_fast(self.ticker_fast)                
             def refresh_ticker2(self):

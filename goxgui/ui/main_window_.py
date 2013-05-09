@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'main_window.ui'
 #
-# Created: Wed May 08 18:48:06 2013
+# Created: Thu May 09 02:24:44 2013
 #      by: PyQt4 UI code generator 4.10
 #
 # WARNING! All changes made in this file will be lost!
@@ -77,7 +77,7 @@ class Ui_MainWindow(object):
         self.groupBoxTrading.setCheckable(False)
         self.groupBoxTrading.setObjectName(_fromUtf8("groupBoxTrading"))
         self.verticalLayout = QtGui.QVBoxLayout(self.groupBoxTrading)
-        self.verticalLayout.setMargin(0)
+        self.verticalLayout.setContentsMargins(0, 2, 0, 0)
         self.verticalLayout.setObjectName(_fromUtf8("verticalLayout"))
         self.textBrowserStatus = QtGui.QTextBrowser(self.groupBoxTrading)
         sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Minimum)
@@ -475,15 +475,6 @@ class Ui_MainWindow(object):
         self.formLayout_2.setObjectName(_fromUtf8("formLayout_2"))
         self.verticalLayout_41 = QtGui.QVBoxLayout()
         self.verticalLayout_41.setObjectName(_fromUtf8("verticalLayout_41"))
-        self.checkBoxLogTrade = QtGui.QCheckBox(self.groupBoxLog)
-        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Maximum, QtGui.QSizePolicy.Minimum)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.checkBoxLogTrade.sizePolicy().hasHeightForWidth())
-        self.checkBoxLogTrade.setSizePolicy(sizePolicy)
-        self.checkBoxLogTrade.setChecked(True)
-        self.checkBoxLogTrade.setObjectName(_fromUtf8("checkBoxLogTrade"))
-        self.verticalLayout_41.addWidget(self.checkBoxLogTrade)
         self.checkBoxLogSystem = QtGui.QCheckBox(self.groupBoxLog)
         sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Maximum, QtGui.QSizePolicy.Minimum)
         sizePolicy.setHorizontalStretch(0)
@@ -493,6 +484,15 @@ class Ui_MainWindow(object):
         self.checkBoxLogSystem.setChecked(True)
         self.checkBoxLogSystem.setObjectName(_fromUtf8("checkBoxLogSystem"))
         self.verticalLayout_41.addWidget(self.checkBoxLogSystem)
+        self.checkBoxLogTrade = QtGui.QCheckBox(self.groupBoxLog)
+        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Maximum, QtGui.QSizePolicy.Minimum)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.checkBoxLogTrade.sizePolicy().hasHeightForWidth())
+        self.checkBoxLogTrade.setSizePolicy(sizePolicy)
+        self.checkBoxLogTrade.setChecked(True)
+        self.checkBoxLogTrade.setObjectName(_fromUtf8("checkBoxLogTrade"))
+        self.verticalLayout_41.addWidget(self.checkBoxLogTrade)
         self.checkBoxLogTicker = QtGui.QCheckBox(self.groupBoxLog)
         sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Maximum, QtGui.QSizePolicy.Minimum)
         sizePolicy.setHorizontalStretch(0)
@@ -599,8 +599,8 @@ class Ui_MainWindow(object):
         self.spinBoxAutoRefreshTicker.setSuffix(_translate("MainWindow", " seconds", None))
         self.tabWidget_2.setTabText(self.tabWidget_2.indexOf(self.tabWidgetTicker), _translate("MainWindow", "Ticker", None))
         self.groupBoxLog.setTitle(_translate("MainWindow", "Application Log", None))
-        self.checkBoxLogTrade.setText(_translate("MainWindow", "System", None))
-        self.checkBoxLogSystem.setText(_translate("MainWindow", "Trade", None))
+        self.checkBoxLogSystem.setText(_translate("MainWindow", "System", None))
+        self.checkBoxLogTrade.setText(_translate("MainWindow", "Trade", None))
         self.checkBoxLogTicker.setText(_translate("MainWindow", "Ticker", None))
         self.checkBoxLogDepth.setText(_translate("MainWindow", "Depth", None))
         self.textBrowserLog.setToolTip(_translate("MainWindow", "Technical output", None))

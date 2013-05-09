@@ -3,7 +3,6 @@ from PyQt4.QtCore import Qt
 from PyQt4.QtCore import QVariant
 from PyQt4.QtCore import SIGNAL
 import utilities
-import abc
 import operator
 
 class Model(QAbstractTableModel):
@@ -11,20 +10,18 @@ class Model(QAbstractTableModel):
     Model representing a collection of orders.
     '''
 
-    # orders smaller than this value will be grouped
-    GROUP_ORDERS = 0.6
-
-    def __init__(self, parent, market, headerdata):
+    def __init__(self, parent, market, preferences, headerdata):
         QAbstractTableModel.__init__(self, parent)
-        self.__market = market
-        self.__market.signal_orderbook_changed.connect(self.slot_changed)
-        self.__headerdata = headerdata
-        self.__data = []
+        self.market = market
+        self.preferences = preferences
+        self.market.signal_orderbook_changed.connect(self.slot_changed)
+        self.headerdata = headerdata
+        self.data = []
 
     # start slots
 
     def slot_changed(self, orderbook):
-        self.__data = self.__parse_data(orderbook)
+        self.data = self.__parse_data(orderbook)
         self.emit(SIGNAL("layoutChanged()"))
 
     # end slots
@@ -50,10 +47,10 @@ class Model(QAbstractTableModel):
             vwap += price * size
 
             total += size
-            if vsize > utilities.float2internal(self.GROUP_ORDERS):
-                vwap = utilities.gox2internal(vwap / vsize, 'USD')
-                vsize = utilities.gox2internal(vsize, 'BTC')
-                total = utilities.gox2internal(total, 'BTC')
+            if vsize > utilities.float2internal(self.preferences.GROUP_ORDERS):
+                vwap = utilities.gox2internal(vwap / vsize, self.market.curr_quote)
+                vsize = utilities.gox2internal(vsize, self.market.curr_base)
+                total = utilities.gox2internal(total, self.market.curr_base)
                 data_out.append([vwap, vsize, total])
                 count = 1
                 vwap = 0
@@ -63,30 +60,22 @@ class Model(QAbstractTableModel):
 
         return data_out
 
-    @abc.abstractmethod
-    def _get_data_from_book(self, book):
-        '''
-        This method retrieves the orders relevant to this
-        specific model from the order book.
-        '''
-        return []
-
     def get_price(self, index):
-        return self.__data[index][0]
+        return self.data[index][0]
 
     def get_size(self, index):
-        return self.__data[index][1]
+        return self.data[index][1]
 
     def get_total(self, index):
-        return self.__data[index][2]
+        return self.data[index][2]
 
     # START Qt methods
 
     def rowCount(self, parent):
-        return len(self.__data)
+        return len(self.data)
 
     def columnCount(self, parent):
-        return len(self.__headerdata)
+        return len(self.headerdata)
 
     def data(self, index, role):
 
@@ -108,7 +97,7 @@ class Model(QAbstractTableModel):
 
     def headerData(self, col, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-            return QVariant(self.__headerdata[col])
+            return QVariant(self.headerdata[col])
         return QVariant()
 
     # END Qt methods
@@ -116,8 +105,8 @@ class Model(QAbstractTableModel):
 
 class ModelAsk(Model):
 
-    def __init__(self, parent, market):
-        Model.__init__(self, parent, market, ['Ask $', 'Size ' + utilities.BITCOIN_SYMBOL,
+    def __init__(self, parent, market, preferences):
+        Model.__init__(self, parent, market, preferences, ['Ask $', 'Size ' + utilities.BITCOIN_SYMBOL,
             'Total ' + utilities.BITCOIN_SYMBOL])
 
     def _get_data_from_book(self, book):
@@ -126,8 +115,8 @@ class ModelAsk(Model):
 
 class ModelBid(Model):
 
-    def __init__(self, parent, market):
-        Model.__init__(self, parent, market, ['Bid $', 'Size ' + utilities.BITCOIN_SYMBOL,
+    def __init__(self, parent, market, preferences):
+        Model.__init__(self, parent, market, preferences, ['Bid $', 'Size ' + utilities.BITCOIN_SYMBOL,
             'Total ' + utilities.BITCOIN_SYMBOL])
 
     def _get_data_from_book(self, book):
@@ -138,18 +127,17 @@ class ModelUserOwn(QAbstractTableModel):
     Model representing a collection of orders.
     '''
 
-    def __init__(self, parent, market, headerdata):
+    def __init__(self, parent, market, preferences, headerdata):
         QAbstractTableModel.__init__(self, parent)
-        self.__market = market
-        self.__market.signal_owns_changed.connect(self.__slot_changed)
-        self.__headerdata = headerdata
-        self.__data = [["---",1E14,1E11,"NOT","AUTHENTICATED. NO USER ORDER DATA."]]
-        
+        self.market = market
+        self.market.signal_owns_changed.connect(self.__slot_changed)
+        self.data = [["---",1E14,1E11,"NOT","AUTHENTICATED. NO USER ORDER DATA."]]
+        self.headerdata = headerdata
         self.lastsortascdesc = Qt.DescendingOrder
         self.lastsortcol = 1
 
     def __slot_changed(self, book):
-        self.__data = self.__parse_data(book)
+        self.data = self.__parse_data(book)
         self.emit(SIGNAL("layoutChanged()"))
         self.sort(self.lastsortcol,self.lastsortascdesc)
 
@@ -160,8 +148,8 @@ class ModelUserOwn(QAbstractTableModel):
 
         for x in data_in:
 
-            price = utilities.gox2internal(x.price,'USD')
-            size = utilities.gox2internal(x.volume,'BTC')
+            price = utilities.gox2internal(x.price,self.market.curr_quote)
+            size = utilities.gox2internal(x.volume,self.market.curr_base)
             typ = x.typ
             oid = x.oid
             status = x.status 
@@ -170,35 +158,27 @@ class ModelUserOwn(QAbstractTableModel):
 
         return data_out
 
-    @abc.abstractmethod
-    def _get_data_from_book(self, book):
-        '''
-        This method retrieves the orders relevant to this
-        specific model from the order book.
-        '''
-        return []
-
     def get_typ(self, index):
-        return self.__data[index][0]
+        return self.data[index][0]
 
     def get_price(self, index):
-        return self.__data[index][1]
+        return self.data[index][1]
 
     def get_size(self, index):
-        return self.__data[index][2]
+        return self.data[index][2]
 
     def get_status(self, index):    
-        return self.__data[index][3]
+        return self.data[index][3]
     
     def get_oid(self, index):
-        return self.__data[index][4]
+        return self.data[index][4]
 
 
     def rowCount(self, parent):
-        return len(self.__data)
+        return len(self.data)
 
     def columnCount(self, parent):
-        return len(self.__headerdata)
+        return len(self.headerdata)
 
     def data(self, index, role):
   
@@ -224,16 +204,16 @@ class ModelUserOwn(QAbstractTableModel):
 
     def headerData(self, col, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-            return QVariant(self.__headerdata[col])
+            return QVariant(self.headerdata[col])
         return QVariant()
     
     def sort(self, Ncol, order):
         """Sort table by given column number.
         """
         self.emit(SIGNAL("layoutAboutToBeChanged()"))
-        self.__data = sorted(self.__data, key=operator.itemgetter(Ncol))        
+        self.data = sorted(self.data, key=operator.itemgetter(Ncol))        
         if order == Qt.DescendingOrder:
-            self.__data.reverse()
+            self.data.reverse()
         self.emit(SIGNAL("layoutChanged()"))
         self.lastsortcol = Ncol
         self.lastsortascdesc = order
@@ -241,8 +221,8 @@ class ModelUserOwn(QAbstractTableModel):
         
 class ModelOwns(ModelUserOwn):
 
-    def __init__(self, parent, market):
-        ModelUserOwn.__init__(self, parent, market, ['Type','Price','Size','Status','Order ID'])
+    def __init__(self, parent, market, preferences):
+        ModelUserOwn.__init__(self, parent, market, preferences, ['Type','Price','Size','Status','Order ID'])
 
     def _get_data_from_book(self, book):
         return book.owns
@@ -252,13 +232,13 @@ class ModelStopOrders(QAbstractTableModel):
     Model representing a collection of stop orders.
     '''
 
-    def __init__(self, parent, market, headerdata):
+    def __init__(self, parent, market, preferences, headerdata):
         QAbstractTableModel.__init__(self, parent)
-        self.__market = market
-        self.stopOrders = self.__market.gox.stopOrders = []
-        self.__market.gox.stopbot_executed.connect(self.__on_signal_executed)
-        self.__headerdata = headerdata
-        self.__data = [["NO","  STOP ORDERS  ","YET"]]
+        self.market = market
+        self.stopOrders = self.market.gox.stopOrders = []
+        self.market.gox.stopbot_executed.connect(self.__on_signal_executed)
+        self.headerdata = headerdata
+        self.data = [["NO","  STOP ORDERS  ","YET"]]
         
         self.lastsortascdesc = Qt.DescendingOrder
         self.lastsortcol = 0
@@ -272,7 +252,7 @@ class ModelStopOrders(QAbstractTableModel):
         self.__slot_changed()
 
     def __slot_changed(self):
-        self.__data = self.__parse_data()
+        self.data = self.__parse_data()
         self.emit(SIGNAL("layoutChanged()"))
         self.sort(self.lastsortcol,self.lastsortascdesc)
 
@@ -292,13 +272,13 @@ class ModelStopOrders(QAbstractTableModel):
         return data_out
     
     def get(self,row,col):
-        return self.__data[row][col]
+        return self.data[row][col]
     
     def rowCount(self, parent):
-        return len(self.__data)
+        return len(self.data)
 
     def columnCount(self, parent):
-        return len(self.__headerdata)
+        return len(self.headerdata)
         
     def data(self, index, role):
   
@@ -311,24 +291,24 @@ class ModelStopOrders(QAbstractTableModel):
         row = index.row()
         col = index.column()
     
-        return QVariant(self.__data[row][col])
+        return QVariant(self.data[row][col])
         
     def headerData(self, col, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-            return QVariant(self.__headerdata[col])
+            return QVariant(self.headerdata[col])
         return QVariant()
     
     def sort(self, Ncol, order):
         """Sort table by given column number.  """
         self.emit(SIGNAL("layoutAboutToBeChanged()"))
-        self.__data = sorted(self.__data, key=operator.itemgetter(Ncol))        
+        self.data = sorted(self.data, key=operator.itemgetter(Ncol))        
         if order == Qt.DescendingOrder:
-            self.__data.reverse()
+            self.data.reverse()
         self.emit(SIGNAL("layoutChanged()"))
         self.lastsortcol = Ncol
         self.lastsortascdesc = order
         
 class ModelStops(ModelStopOrders):
 
-    def __init__(self, parent, market):
-        ModelStopOrders.__init__(self, parent, market, ['ID #','Size '+utilities.BITCOIN_SYMBOL,'Price $'])
+    def __init__(self, parent, market, preferences):
+        ModelStopOrders.__init__(self, parent, market, preferences, ['ID #','Size '+utilities.BITCOIN_SYMBOL,'Price $'])

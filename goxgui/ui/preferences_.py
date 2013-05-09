@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'preferences.ui'
 #
-# Created: Wed May 08 20:36:30 2013
+# Created: Thu May 09 03:33:13 2013
 #      by: PyQt4 UI code generator 4.10
 #
 # WARNING! All changes made in this file will be lost!
@@ -136,6 +136,43 @@ class Ui_Preferences(object):
         self.verticalLayout_5.addItem(spacerItem2)
         self.verticalLayout_5.setStretch(1, 1)
         self.tabWidget.addTab(self.tabVarious, _fromUtf8(""))
+        self.tabVisual = QtGui.QWidget()
+        self.tabVisual.setObjectName(_fromUtf8("tabVisual"))
+        self.formLayoutWidget = QtGui.QWidget(self.tabVisual)
+        self.formLayoutWidget.setGeometry(QtCore.QRect(3, 6, 712, 316))
+        self.formLayoutWidget.setObjectName(_fromUtf8("formLayoutWidget"))
+        self.formLayout = QtGui.QFormLayout(self.formLayoutWidget)
+        self.formLayout.setMargin(0)
+        self.formLayout.setObjectName(_fromUtf8("formLayout"))
+        self.label = QtGui.QLabel(self.formLayoutWidget)
+        self.label.setObjectName(_fromUtf8("label"))
+        self.formLayout.setWidget(0, QtGui.QFormLayout.LabelRole, self.label)
+        self.doubleSpinBoxGROUPORDERS = QtGui.QDoubleSpinBox(self.formLayoutWidget)
+        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Fixed, QtGui.QSizePolicy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.doubleSpinBoxGROUPORDERS.sizePolicy().hasHeightForWidth())
+        self.doubleSpinBoxGROUPORDERS.setSizePolicy(sizePolicy)
+        self.doubleSpinBoxGROUPORDERS.setMinimumSize(QtCore.QSize(100, 0))
+        self.doubleSpinBoxGROUPORDERS.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
+        self.doubleSpinBoxGROUPORDERS.setDecimals(5)
+        self.doubleSpinBoxGROUPORDERS.setMaximum(99999.0)
+        self.doubleSpinBoxGROUPORDERS.setSingleStep(0.1)
+        self.doubleSpinBoxGROUPORDERS.setObjectName(_fromUtf8("doubleSpinBoxGROUPORDERS"))
+        self.formLayout.setWidget(0, QtGui.QFormLayout.FieldRole, self.doubleSpinBoxGROUPORDERS)
+        self.label_5 = QtGui.QLabel(self.formLayoutWidget)
+        self.label_5.setObjectName(_fromUtf8("label_5"))
+        self.formLayout.setWidget(1, QtGui.QFormLayout.LabelRole, self.label_5)
+        self.checkBoxLogChannels = QtGui.QCheckBox(self.formLayoutWidget)
+        self.checkBoxLogChannels.setEnabled(False)
+        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Maximum, QtGui.QSizePolicy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.checkBoxLogChannels.sizePolicy().hasHeightForWidth())
+        self.checkBoxLogChannels.setSizePolicy(sizePolicy)
+        self.checkBoxLogChannels.setObjectName(_fromUtf8("checkBoxLogChannels"))
+        self.formLayout.setWidget(1, QtGui.QFormLayout.FieldRole, self.checkBoxLogChannels)
+        self.tabWidget.addTab(self.tabVisual, _fromUtf8(""))
         self.verticalLayout_2.addWidget(self.tabWidget)
         self.horizontalLayout = QtGui.QHBoxLayout()
         self.horizontalLayout.setContentsMargins(20, -1, 20, -1)
@@ -184,4 +221,8 @@ class Ui_Preferences(object):
         self.labelCurrencyboxDescription.setText(_translate("Preferences", "Select your fiat currency, and the target currency you would like to trade:", None))
         self.label_Target.setText(_translate("Preferences", "Target:", None))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tabVarious), _translate("Preferences", "Various Settings", None))
+        self.label.setText(_translate("Preferences", "Combine Orders under: ", None))
+        self.label_5.setText(_translate("Preferences", "Preferences:", None))
+        self.checkBoxLogChannels.setText(_translate("Preferences", "Remember Channels to Log ?", None))
+        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tabVisual), _translate("Preferences", "Visual / Layout", None))
 

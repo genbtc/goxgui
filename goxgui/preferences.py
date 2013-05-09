@@ -12,9 +12,9 @@ class Preferences(QDialog):
     '''
     Represents the application preferences.
     '''
+    GROUP_ORDERS = 0.6
     DEFAULT_PASSWORD = 'fffuuuuuu'
     FILENAME = 'goxgui.ini'
-    SECTION_GLOBAL = 'goxgui'
 
     def __init__(self):
         QDialog.__init__(self)
@@ -26,7 +26,6 @@ class Preferences(QDialog):
         # improve ui on mac
         if utilities.platform_is_mac():
             self.__adjust_for_mac()
-
 
         # connect ui signals to logic
         self.__ui.lineEditPassword.textChanged.connect(
@@ -50,6 +49,8 @@ class Preferences(QDialog):
         else:
             self.__init_with_defaults()
             self.__save()
+            
+        self.GROUP_ORDERS = float(self.configparser.get("goxgui","group_orders"))
 
     # start slots
     def __slot_password_changed(self):
@@ -94,10 +95,11 @@ class Preferences(QDialog):
     # start private methods
 
     def __init_with_defaults(self):
-        self.configparser.add_section(self.SECTION_GLOBAL)
+        self.configparser.add_section('goxgui')
         self.set('key', '')
         self.set('secret', '')
         self.set('password', self.DEFAULT_PASSWORD)
+        self.set('group_orders', self.GROUP_ORDERS)
 
     def __load_to_gui(self):
         self.do_configfile()
@@ -110,8 +112,13 @@ class Preferences(QDialog):
         self.__ui.comboBoxCurrencyFiat.addItem(self.configparser.get("gox","quote_currency"))
         self.__ui.comboBoxCurrencyTarget.clear()
         self.__ui.comboBoxCurrencyTarget.addItem(self.configparser.get("gox","base_currency"))
+        #set default order grouping 
+        self.__ui.doubleSpinBoxGROUPORDERS.setValue(self.GROUP_ORDERS)
+        self.GROUP_ORDERS = self.__ui.doubleSpinBoxGROUPORDERS.value()
+        
 
     def __save_from_gui(self):
+        #save settings to the configparser
         self.set('key',str(self.__ui.lineEditKey.text()))
         password = str(self.__ui.lineEditPassword.text())
         if not password:
@@ -119,8 +126,12 @@ class Preferences(QDialog):
         self.__set_encrypted_secret(
             str(self.__ui.lineEditSecret.text()),password)
         self.set('password',password)
+        #save currency settings 
         self.configparser.set("gox","quote_currency",str(self.__ui.comboBoxCurrencyFiat.currentText()))
         self.configparser.set("gox","base_currency",str(self.__ui.comboBoxCurrencyTarget.currentText()))
+        #save order grouping settings 
+        self.configparser.set("goxgui","group_orders",str(self.__ui.doubleSpinBoxGROUPORDERS.value()))
+        self.GROUP_ORDERS = self.__ui.doubleSpinBoxGROUPORDERS.value()
 
     def __disable_ok(self, text):
         self.__ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(False)
@@ -185,13 +196,13 @@ class Preferences(QDialog):
         '''
         Retrieves a property from the global section
         '''
-        return self.configparser.get(self.SECTION_GLOBAL, key)
+        return self.configparser.get('goxgui', key)
 
     def set(self, key, value):
         '''
         Stores a property to the global section
         '''
-        self.configparser.set(self.SECTION_GLOBAL, key, value)
+        self.configparser.set('goxgui', key, value)
 
     def decrypt_secret(self,password=''):
         
