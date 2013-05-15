@@ -45,7 +45,7 @@ class Application(QApplication):
 
         # initialize logging
         logging.basicConfig(filename='log.txt', level=logging.INFO,
-            format='%(asctime)s %(message)s')
+                            filemode='w',format='%(asctime)s %(message)s')
         logging.info("Starting application.")
 
         # initialize user preferences

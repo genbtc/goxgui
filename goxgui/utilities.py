@@ -8,20 +8,37 @@ import platform
 
 
 # factor internal representation / regular float
-FACTOR_FLOAT = 100000000
+FACTOR_FLOAT = 1E8
 
 # factor internal representation / gox (BTC)
 FACTOR_GOX_BTC = 1
 
 # factor internal representation / gox (JPY)
-FACTOR_GOX_JPY = 100000
+FACTOR_GOX_JPY = 1E5
 
 # factor internal representation / gox (USD)
-FACTOR_GOX_USD = 1000
+FACTOR_GOX_USD = 1E3
 
 # this symbol will be used as bitcoin symbol
 BITCOIN_SYMBOL = unichr(3647)
 
+def gox2str(value,currency,decimals=8):
+    '''Converts straight from gox internal format to string'''
+    if currency == 'USD':
+        temp = value / 1E5
+    elif currency == 'BTC':
+        temp = value / 1E8
+    elif currency == 'JPY' or currency == 'SEK':
+        temp = value / 1E3
+    return ('{{:,.{0}f}}'.format(decimals).format(temp))
+
+def gox2float(value,currency):
+    if currency == 'USD':
+        return value / 1E5
+    if currency == 'BTC':
+        return value / 1E8
+    if currency == 'JPY' or currency == 'SEK':
+        return value / 1E3    
 
 def gox2internal(value, currency):
     '''
@@ -29,13 +46,12 @@ def gox2internal(value, currency):
     (see https://en.bitcoin.it/wiki/MtGox/API)
     into the application's internal format.
     '''
+    if currency == 'USD':
+        return value * FACTOR_GOX_USD
     if currency == 'BTC':
         return value * FACTOR_GOX_BTC
-    if currency == 'JPY':
+    if currency == 'JPY' or currency == 'SEK':
         return value * FACTOR_GOX_JPY
-    else:
-        return value * FACTOR_GOX_USD
-
 
 def internal2gox(value, currency):
     '''

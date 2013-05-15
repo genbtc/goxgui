@@ -55,6 +55,12 @@ class View(QMainWindow):
             [self.ui.checkBoxLogTrade, 'trade'],
             [self.ui.checkBoxLogDepth, 'depth'],
         ]
+        #connect the channel checkboxes to the handler that persists the
+        #settings to the config file
+        for x in self.logchannels:
+            x[0].clicked.connect(self.set_ignorechan)
+        #read the config file and re-apply previous settings
+        self.get_ignorechan()
         
         # activate market
         self.market.start()
@@ -72,7 +78,7 @@ class View(QMainWindow):
         self.ui.tableUserOrders.clicked.connect(self.userorder_selected)
 
         #create the stop orders TAB.
-        self.modelStops = ModelStops(self, self.market, preferences)
+        self.modelStops = ModelStops(self, self.market)
         self.ui.tableStopOrders.setModel(self.modelStops)
         self.ui.tableStopOrders.resizeColumnsToContents()
 
@@ -96,7 +102,22 @@ class View(QMainWindow):
         self.adjustSize()
         self.show()
         self.raise_()
+        
 
+    def get_ignorechan(self):
+        for x in self.logchannels:
+            for y in self.preferences.ignore_channels:
+                if x[1] == y:
+                    x[0].setChecked(False)
+            
+    def set_ignorechan(self):
+        ignore_channels = ""
+        for x in self.logchannels:            
+            if not x[0].isChecked():
+                ignore_channels += (x[1] + ' ')
+        self.preferences.set("ignore_channels",ignore_channels)
+        self.preferences.save()
+        
     def adjust_for_mac(self):
         '''
         Fixes some stuff that looks good on windows but bad on mac.
@@ -105,6 +126,8 @@ class View(QMainWindow):
         font = QtGui.QFont('Monaco', 11)
         self.ui.tableAsk.setFont(font)
         self.ui.tableBid.setFont(font)
+        self.ui.tableUserOrders.setFont(font)
+        self.ui.tableStopOrders.setFont(font)
         self.ui.textBrowserLog.setFont(font)
         self.ui.textBrowserStatus.setFont(font)
         self.ui.lineEditOrder.setFont(font)
@@ -215,9 +238,6 @@ class View(QMainWindow):
 
     def slot_log(self, text):
 
-        logging.info(text)
-        text = self.prepend_date(text)
-
         doOutput = False
 
         if self.ui.checkBoxLogSystem.isChecked():
@@ -226,8 +246,11 @@ class View(QMainWindow):
         for entry in self.logchannels:
             if entry[1] in text:
                 doOutput = entry[0].isChecked()
+                break
 
         if doOutput:
+            logging.info(text)
+            text = self.prepend_date(text)            
             self.ui.textBrowserLog.append(text)
 
     def prepend_date(self, text):
@@ -257,16 +280,14 @@ class View(QMainWindow):
         return utilities.float2internal(value)
 
     def set_trade_size(self, value):
-        value_float = utilities.internal2float(value)
-        self.ui.doubleSpinBoxBtc.setValue(value_float)
+        self.ui.doubleSpinBoxBtc.setValue(float(value))
 
     def get_trade_price(self):
         value = self.ui.doubleSpinBoxPrice.value()
         return utilities.float2internal(value)
 
     def set_trade_price(self, value):
-        value_float = utilities.internal2float(value)
-        self.ui.doubleSpinBoxPrice.setValue(value_float)
+        self.ui.doubleSpinBoxPrice.setValue(float(value))
 
     def get_trade_total(self):
         value = self.ui.doubleSpinBoxTotal.value()
@@ -293,7 +314,7 @@ class View(QMainWindow):
 
     def set_trade_size_from_wallet(self):
         self.set_trade_size(
-            utilities.gox2internal(self.market.get_balance(self.market.curr_base), self.market.curr_base))
+            utilities.gox2float(self.market.get_balance(self.market.curr_base), self.market.curr_base))
         self.set_selected_trade_type('SELL')
 
     def set_trade_total_from_wallet(self):
@@ -310,7 +331,8 @@ class View(QMainWindow):
 
         size = self.get_trade_size()
         price = self.get_trade_price()
-        total = self.get_trade_total()
+        total = utilities.multiply_internal(price, size)
+        self.set_trade_total(total)
 
         trade_name = 'BID' if trade_type == 'BUY' else 'ASK'
 

@@ -41,13 +41,10 @@ class Model(QAbstractTableModel):
         group_size = utilities.float2internal(self.preferences.GROUP_ORDERS)
         for x in book:
 
-            price = x.price
-            size = x.volume
-
-            vsize += size
-            vwap += price * size
-
-            total += size
+            vsize += x.volume
+            vwap += x.price * x.volume
+            total += x.volume
+            
             if vsize > group_size:
                 vwap = vwap / vsize
                 data_out.append([vwap, vsize, total])
@@ -60,13 +57,13 @@ class Model(QAbstractTableModel):
         return data_out
 
     def get_price(self, index):
-        return utilities.gox2internal(self._data[index][0],self.market.curr_quote)
+        return utilities.gox2str(self._data[index][0],self.market.curr_quote,5)
 
     def get_size(self, index):
-        return utilities.gox2internal(self._data[index][1],self.market.curr_base)
+        return utilities.gox2str(self._data[index][1],self.market.curr_base,8)
 
     def get_total(self, index):
-        return utilities.gox2internal(self._data[index][2],self.market.curr_base)
+        return utilities.gox2str(self._data[index][2],self.market.curr_base,8)
 
     # START Qt methods
 
@@ -88,11 +85,11 @@ class Model(QAbstractTableModel):
         col = index.column()
 
         if col == 0:
-            return QVariant(utilities.internal2str(self.get_price(row), 5))
+            return QVariant(self.get_price(row))
         elif col == 1:
-            return QVariant(utilities.internal2str(self.get_size(row)))
+            return QVariant(self.get_size(row))
         elif col == 2:
-            return QVariant(utilities.internal2str(self.get_total(row)))
+            return QVariant(self.get_total(row))
 
     def headerData(self, col, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
@@ -141,30 +138,22 @@ class ModelUserOwn(QAbstractTableModel):
 
     def __parse_data(self, book):
         '''Parse the own user order book'''
-        data_in = self._get_data_from_book(book)
         data_out = []
 
-        for x in data_in:
-
-            price = utilities.gox2internal(x.price,self.market.curr_quote)
-            size = utilities.gox2internal(x.volume,self.market.curr_base)
-            typ = x.typ
-            oid = x.oid
-            status = x.status 
-            
-            data_out.append([typ,price,size,status,oid])
+        for x in book:
+            data_out.append([x.typ,x.price,x.volume,x.status,x.oid])
 
         return data_out
 
     def get_typ(self, index):
         return self._data[index][0]
-
+    
     def get_price(self, index):
-        return self._data[index][1]
+        return utilities.gox2str(self._data[index][1],self.market.curr_quote,5)
 
     def get_size(self, index):
-        return self._data[index][2]
-
+        return utilities.gox2str(self._data[index][2],self.market.curr_base,8)
+    
     def get_status(self, index):    
         return self._data[index][3]
     
@@ -192,9 +181,9 @@ class ModelUserOwn(QAbstractTableModel):
         if col == 0:
             return QVariant(self.get_typ(row))
         elif col == 1:
-            return QVariant(utilities.internal2str(self.get_price(row), 5))
+            return QVariant(self.get_price(row))
         elif col == 2:
-            return QVariant(utilities.internal2str(self.get_size(row)))
+            return QVariant(self.get_size(row))
         elif col == 3:
             return QVariant(self.get_status(row))
         elif col == 4:
@@ -222,18 +211,14 @@ class ModelOwns(ModelUserOwn):
     def __init__(self, parent, market, preferences):
         ModelUserOwn.__init__(self, parent, market, preferences, ['Type','Price','Size','Status','Order ID'])
 
-    def _get_data_from_book(self, book):
-        return book.owns
-
 class ModelStopOrders(QAbstractTableModel):
     '''
     Model representing a collection of stop orders.
     '''
 
-    def __init__(self, parent, market, preferences, headerdata):
+    def __init__(self, parent, market, headerdata):
         QAbstractTableModel.__init__(self, parent)
         self.market = market
-        self.stopOrders = self.market.gox.stopOrders = []
         self.market.gox.stopbot_executed.connect(self.__on_signal_executed)
         self.headerdata = headerdata
         self._data = [["NO","  STOP ORDERS  ","YET"]]
@@ -246,7 +231,7 @@ class ModelStopOrders(QAbstractTableModel):
         self.__slot_changed()
 
     def __on_signal_executed(self, order, dummy_data2):
-        self.stopOrders.remove(order)
+        self.market.gox.stopOrders.remove(order)
         self.__slot_changed()
 
     def __slot_changed(self):
@@ -258,13 +243,8 @@ class ModelStopOrders(QAbstractTableModel):
         '''Parse the own user order book'''
         data_out = []
         count = 1
-        for x in self.stopOrders:
-            
-            oid = count
-            size = x[1]
-            price = x[2]
-  
-            data_out.append([oid,size,price])
+        for x in self.market.gox.stopOrders:
+            data_out.append([count,x[1],x[2]])
             count += 1
         return data_out
     
@@ -307,5 +287,5 @@ class ModelStopOrders(QAbstractTableModel):
         
 class ModelStops(ModelStopOrders):
 
-    def __init__(self, parent, market, preferences):
-        ModelStopOrders.__init__(self, parent, market, preferences, ['ID #','Size '+utilities.BITCOIN_SYMBOL,'Price $'])
+    def __init__(self, parent, market):
+        ModelStopOrders.__init__(self, parent, market, ['ID #','Size '+utilities.BITCOIN_SYMBOL,'Price $'])

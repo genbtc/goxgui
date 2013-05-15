@@ -51,6 +51,7 @@ class Preferences(QDialog):
             self.__save()
             
         self.GROUP_ORDERS = float(self.configparser.get("goxgui","group_orders"))
+        self.ignore_channels = self.configparser.get("goxgui","ignore_channels").split()
 
     # start slots
     def __slot_password_changed(self):
@@ -100,6 +101,7 @@ class Preferences(QDialog):
         self.set('secret', '')
         self.set('password', self.DEFAULT_PASSWORD)
         self.set('group_orders', self.GROUP_ORDERS)
+        self.set('ignore_channels','') 
 
     def __load_to_gui(self):
         self.do_configfile()
@@ -141,7 +143,7 @@ class Preferences(QDialog):
         self.__ui.buttonBox.button(QDialogButtonBox.Ok).setEnabled(True)
         self.__set_status('')
 
-    def __save(self):
+    def save(self):
         '''
         Saves the config to the .ini file
         '''
@@ -230,6 +232,6 @@ class Preferences(QDialog):
         do not propagate until apply() is called.
         '''
         self.__save_from_gui()
-        self.__save()
+        self.save()
 
     # end public methods
