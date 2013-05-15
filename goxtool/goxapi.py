@@ -68,8 +68,8 @@ USER_AGENT = "goxGUI"
 def int2str(value_int, currency):
     """return currency integer formatted as a string"""
     if currency in "BTC LTC NMC":
-        return ("%16.8f" % (value_int / 100000000.0))
-    if currency == "JPY":
+        return ("%12.8f" % (value_int / 100000000.0))
+    elif currency in "JPY SEK":
         return ("%12.3f" % (value_int / 1000.0))
     else:
         return ("%12.5f" % (value_int / 100000.0))
@@ -79,7 +79,7 @@ def int2float(value_int, currency):
     """convert integer to float, determine the factor by currency name"""
     if currency in "BTC LTC NMC":
         return value_int / 100000000.0
-    if currency == "JPY":
+    elif currency in "JPY SEK":
         return value_int / 1000.0
     else:
         return value_int / 100000.0
@@ -89,7 +89,7 @@ def float2int(value_float, currency):
     """convert float value to integer, determine the factor by currency name"""
     if currency in "BTC LTC NMC":
         return int(round(value_float * 100000000))
-    if currency == "JPY":
+    elif currency in "JPY SEK":
         return int(round(value_float * 1000))
     else:
         return int(round(value_float * 100000))
@@ -1164,14 +1164,14 @@ class Gox(BaseObject):
         self.currency = self.curr_quote # deprecated, use curr_quote instead
 
         # these are needed for conversion from/to intereger, float, string
-        if self.curr_quote == "JPY":
+        if self.curr_quote in "JPY SEK":
             self.mult_quote = 1e3
             self.format_quote = "%12.3f"
         else:
             self.mult_quote = 1e5
             self.format_quote = "%12.5f"
         self.mult_base = 1e8
-        self.format_base = "%16.8f"
+        self.format_base = "%12.8f"
 
         Signal.signal_error.connect(self.signal_debug)
 
@@ -1198,9 +1198,6 @@ class Gox(BaseObject):
         self.client.signal_recv.connect(self.slot_recv)
         self.client.signal_fulldepth.connect(self.signal_fulldepth)
         self.client.signal_fullhistory.connect(self.signal_fullhistory)
-
-        self.timer_poll = Timer(120)
-        self.timer_poll.connect(self.slot_poll)
 
         self.history.signal_changed.connect(self.slot_history_changed)
 
@@ -1295,13 +1292,6 @@ class Gox(BaseObject):
 
         if handler:
             handler(msg)
-
-    def slot_poll(self, _sender, _data):
-        """poll stuff from http in regular intervals, not yet implemented"""
-        if self.client.secret and self.client.secret.know_secret():
-            # poll recent own trades
-            # fixme: how do i do this, whats the api for this?
-            pass
 
     def slot_history_changed(self, _sender, _data):
         """this is a small optimzation, if we tell the client the time
@@ -1605,8 +1595,8 @@ class OrderBook(BaseObject):
         gox.signal_userorder.connect(self.slot_user_order)
         gox.signal_fulldepth.connect(self.slot_fulldepth)
 
-        self.bids = [] # list of Level(), lowest ask first
-        self.asks = [] # list of Level(), highest bid first
+        self.bids = [] # list of Level(), highest bid first
+        self.asks = [] # list of Level(), lowest ask first
         self.owns = [] # list of Order(), unordered list
 
         self.bid = 0
@@ -1663,7 +1653,7 @@ class OrderBook(BaseObject):
                 if len(self.asks):
                     self.ask = self.asks[0].price
 
-            if typ == "ask":  # trade_type=ask means a bid order was filled
+            elif typ == "ask":  # trade_type=ask means a bid order was filled
                 self._repair_crossed_bids(price)
                 if len(self.bids):
                     if self.bids[0].price == price:
@@ -1686,9 +1676,9 @@ class OrderBook(BaseObject):
                     order = self.owns[i]
                     self.debug(
                         "Removing %s:" % order.typ,
-                        "price:", int2str(order.price, self.gox.curr_quote),
-                        "volume:", int2str(volume, self.gox.curr_base),
-                        "%s" % oid)
+                        int2str(order.volume, self.gox.curr_base),
+                        "@", int2str(order.price, self.gox.curr_quote),
+                        ", %s" % oid)
                     # remove it from owns...
                     self.owns.pop(i)
 
@@ -1706,9 +1696,9 @@ class OrderBook(BaseObject):
                     found = True
                     self.debug(
                         "Updating %s:" % typ,
-                        "price:", int2str(price, self.gox.curr_quote),
-                        "volume:", int2str(volume, self.gox.curr_base),
-                        "%s" % oid,
+                        int2str(volume, self.gox.curr_base),
+                        "@", int2str(price, self.gox.curr_quote),
+                        ", %s" % oid,
                         "status:", status)
                     order.volume = volume
                     order.status = status
@@ -1717,9 +1707,9 @@ class OrderBook(BaseObject):
             if not found:
                 self.debug(
                     "Adding %s:" % typ,
-                    "price:", int2str(price, self.gox.curr_quote),
-                    "volume:", int2str(volume, self.gox.curr_base),
-                    "%s" % oid,
+                    int2str(volume, self.gox.curr_base),
+                    "@", int2str(price, self.gox.curr_quote),
+                    ", %s" % oid,
                     "status:", status)
                 self.owns.append(Order(price, volume, typ, oid, status))
 

@@ -48,7 +48,7 @@ class Preferences(QDialog):
             self.__load()
         else:
             self.__init_with_defaults()
-            self.__save()
+            self.save()
             
         self.GROUP_ORDERS = float(self.configparser.get("goxgui","group_orders"))
         self.ignore_channels = self.configparser.get("goxgui","ignore_channels").split()
