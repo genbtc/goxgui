@@ -1,8 +1,8 @@
 # -*- mode: python -*-
-a = Analysis(['C:\\Users\\EOFL\\My Documents\\GitHub\\goxgui\\goxgui\\application.py'],
-             pathex=['C:\\Users\\EOFL\\My Documents\\GitHub\\goxgui\\goxtool', 'C:\\Python27\\Lib\\site-packages\\Crypto\\Cipher\\'],
-             )
-a.datas += [('bitcoin.png', 'C:\\Users\\EOFL\\My Documents\\GitHub\\goxgui\\goxgui\\bitcoin.png',  'DATA')]
+from distutils.sysconfig import get_python_lib
+a = Analysis(['goxgui\\application.py'],
+             pathex=['goxtool\\', os.path.join(get_python_lib(), 'Crypto')])
+a.datas += [('bitcoin.png', 'goxgui\\bitcoin.png',  'DATA')]
 pyz = PYZ(a.pure)
 exe = EXE(pyz,
           a.scripts,
