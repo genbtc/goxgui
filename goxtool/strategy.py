@@ -67,7 +67,8 @@ class Strategy(goxapi.BaseObject):
         updated, if you need the new owns list then use slot_owns_changed"""
         pass
 
-    def slot_owns_changed(self, orderbook, _dummy):
+    def slot_owns_changed(self, orderbook_owns, _dummy):
+        '''owns has been changed to pass the .owns part of the orderbook only'''
         """this comes *after* userorder and orderbook.owns is updated already.
         Also note that this signal is sent by the orderbook object, not by gox,
         so the sender argument is orderbook and not gox. This signal might be

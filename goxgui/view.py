@@ -294,8 +294,7 @@ class View(QMainWindow):
         return utilities.float2internal(value)
 
     def set_trade_total(self, value):
-        value_float = utilities.internal2float(value)
-        self.ui.doubleSpinBoxTotal.setValue(value_float)
+        self.ui.doubleSpinBoxTotal.setValue(float(value))
 
     def get_order_id(self):
         return str(self.ui.lineEditOrder.text())
@@ -356,7 +355,7 @@ class View(QMainWindow):
         total = self.get_trade_total()
         #divide Total by Price and fill the size edit box in.
         size = utilities.divide_internal(total, price)
-        self.set_trade_size(size)
+        self.set_trade_size(utilities.internal2float(size))
 
     def recalculate_total(self):
         #When the total button is clicked
@@ -364,15 +363,12 @@ class View(QMainWindow):
         size = self.get_trade_size()
         #Multiply Price by Size and fill the total edit box in
         total = utilities.multiply_internal(price, size)
-        self.set_trade_total(total)
+        self.set_trade_total(utilities.internal2float(total))
 
     def display_userorder(self, price, size, order_type, oid, status):
 
-        size = utilities.gox2internal(size, self.market.curr_base)
-        price = utilities.gox2internal(price, self.market.curr_quote)
-
-        size = utilities.internal2str(size)
-        price = utilities.internal2str(price,5)
+        size = utilities.gox2str(size, self.market.curr_base)
+        price = utilities.gox2str(price, self.market.curr_quote,5)
 
         if order_type == '':
             self.status_message("Order <a href=\"{0}\">{0}</a> {1}.".format(

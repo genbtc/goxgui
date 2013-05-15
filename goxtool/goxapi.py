@@ -561,6 +561,7 @@ class History(BaseObject):
                     self.add_candle(OHLCV(
                         time_round, price, price, price, price, volume))
             else:
+                self.debug("### starting first candle")
                 self.add_candle(OHLCV(
                     time_round, price, price, price, price, volume))
 

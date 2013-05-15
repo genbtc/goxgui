@@ -21,20 +21,31 @@ class Strategy(strategy.Strategy):
         """a trade message has been received"""
         if gox.stopbot_active:
             for order in gox.stopOrders:
-                STOP_VOLUME = float2int(order[1],'BTC')
-                STOP_PRICE = float2int(order[2],'USD')
-                if STOP_VOLUME > 0:
-                    if last_price <= STOP_PRICE:
+                stop_volume = float2int(order[1],gox.curr_base)
+                stop_price = float2int(order[2],gox.curr_quote)
+                if stop_volume > 0:
+                    if stop_price < 0:
+                        price_trail = last_price + stop_price
+                        if len(order) == 3:                 #on the first time run...
+                            order.append(stop_price)        #store the trail distance
+                            order.append(price_trail)       #store the last trailing stop price
+                            stop_price = price_trail        #set the stop price for this run
+                        elif len(order) == 5:               #on all other subsequent runs
+                            if price_trail > order[4]:      #if last trail price > old trail price 
+                                order[4] = price_trail      #store a new trail price
+                            stop_price = order[4]           #then set it for the current run
+
+                    if last_price <= stop_price:
                         self.debug("StopLoss Executed. Market Sell %s %s (last trade was at or below: $%s)" % 
                                    (order[1],gox.curr_base,order[2]))
                         gox.stopbot_executed(order,None)
                         if not SIMULATION:
-                            gox.sell(0, STOP_VOLUME)
-                elif STOP_VOLUME < 0:
-                    if last_price >= STOP_PRICE:
+                            gox.sell(0, stop_volume)
+                elif stop_volume < 0:
+                    if last_price >= stop_price:
                         self.debug("StopGain Executed. Market Buy %s %s (last trade was at or above: $%s)" % 
-                                   (order[1]*-1,gox.curr_base,order[2]))
+                                   (abs(order[1]),gox.curr_base,order[2]))
                         gox.stopbot_executed(order,None)
                         if not SIMULATION:
-                            gox.buy(0, STOP_VOLUME*-1)
+                            gox.buy(0, abs(stop_volume))
                     
