@@ -49,9 +49,7 @@ class Model(QAbstractTableModel):
 
             total += size
             if vsize > group_size:
-                vwap = utilities.gox2internal(vwap / vsize, self.market.curr_quote)
-                vsize = utilities.gox2internal(vsize, self.market.curr_base)
-                total = utilities.gox2internal(total, self.market.curr_base)
+                vwap = vwap / vsize
                 data_out.append([vwap, vsize, total])
                 count = 1
                 vwap = 0
@@ -62,13 +60,13 @@ class Model(QAbstractTableModel):
         return data_out
 
     def get_price(self, index):
-        return self._data[index][0]
+        return utilities.gox2internal(self._data[index][0],self.market.curr_quote)
 
     def get_size(self, index):
-        return self._data[index][1]
+        return utilities.gox2internal(self._data[index][1],self.market.curr_base)
 
     def get_total(self, index):
-        return self._data[index][2]
+        return utilities.gox2internal(self._data[index][2],self.market.curr_base)
 
     # START Qt methods
 
