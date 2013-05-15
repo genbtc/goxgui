@@ -16,12 +16,14 @@ class Model(QAbstractTableModel):
         self.preferences = preferences
         self.market.signal_orderbook_changed.connect(self.slot_changed)
         self.headerdata = headerdata
-        self.data = []
+        self._data = []
 
     # start slots
-
+    def _get_data_from_book(self, book):
+        pass
+    
     def slot_changed(self, orderbook):
-        self.data = self.__parse_data(orderbook)
+        self._data = self.__parse_data(self._get_data_from_book(orderbook))
         self.emit(SIGNAL("layoutChanged()"))
 
     # end slots
@@ -31,14 +33,13 @@ class Model(QAbstractTableModel):
         Parses the incoming data from gox,
         converts money values to our internal money format.
         '''
-        data_in = self._get_data_from_book(book)
         data_out = []
-
-        total = 0
         count = 1
+        total = 0
         vwap = 0
         vsize = 0
-        for x in data_in:
+        group_size = utilities.float2internal(self.preferences.GROUP_ORDERS)
+        for x in book:
 
             price = x.price
             size = x.volume
@@ -47,7 +48,7 @@ class Model(QAbstractTableModel):
             vwap += price * size
 
             total += size
-            if vsize > utilities.float2internal(self.preferences.GROUP_ORDERS):
+            if vsize > group_size:
                 vwap = utilities.gox2internal(vwap / vsize, self.market.curr_quote)
                 vsize = utilities.gox2internal(vsize, self.market.curr_base)
                 total = utilities.gox2internal(total, self.market.curr_base)
@@ -61,18 +62,18 @@ class Model(QAbstractTableModel):
         return data_out
 
     def get_price(self, index):
-        return self.data[index][0]
+        return self._data[index][0]
 
     def get_size(self, index):
-        return self.data[index][1]
+        return self._data[index][1]
 
     def get_total(self, index):
-        return self.data[index][2]
+        return self._data[index][2]
 
     # START Qt methods
 
     def rowCount(self, parent):
-        return len(self.data)
+        return len(self._data)
 
     def columnCount(self, parent):
         return len(self.headerdata)
@@ -90,9 +91,9 @@ class Model(QAbstractTableModel):
 
         if col == 0:
             return QVariant(utilities.internal2str(self.get_price(row), 5))
-        if col == 1:
+        elif col == 1:
             return QVariant(utilities.internal2str(self.get_size(row)))
-        if col == 2:
+        elif col == 2:
             return QVariant(utilities.internal2str(self.get_total(row)))
 
     def headerData(self, col, orientation, role):
@@ -112,7 +113,6 @@ class ModelAsk(Model):
     def _get_data_from_book(self, book):
         return book.asks
 
-
 class ModelBid(Model):
 
     def __init__(self, parent, market, preferences):
@@ -131,13 +131,13 @@ class ModelUserOwn(QAbstractTableModel):
         QAbstractTableModel.__init__(self, parent)
         self.market = market
         self.market.signal_owns_changed.connect(self.__slot_changed)
-        self.data = [["---",1E14,1E11,"NOT","AUTHENTICATED. NO USER ORDER DATA."]]
+        self._data = [["---",1E14,1E11,"NOT","AUTHENTICATED. NO USER ORDER DATA."]]
         self.headerdata = headerdata
         self.lastsortascdesc = Qt.DescendingOrder
         self.lastsortcol = 1
 
     def __slot_changed(self, book):
-        self.data = self.__parse_data(book)
+        self._data = self.__parse_data(book)
         self.emit(SIGNAL("layoutChanged()"))
         self.sort(self.lastsortcol,self.lastsortascdesc)
 
@@ -159,23 +159,23 @@ class ModelUserOwn(QAbstractTableModel):
         return data_out
 
     def get_typ(self, index):
-        return self.data[index][0]
+        return self._data[index][0]
 
     def get_price(self, index):
-        return self.data[index][1]
+        return self._data[index][1]
 
     def get_size(self, index):
-        return self.data[index][2]
+        return self._data[index][2]
 
     def get_status(self, index):    
-        return self.data[index][3]
+        return self._data[index][3]
     
     def get_oid(self, index):
-        return self.data[index][4]
+        return self._data[index][4]
 
 
     def rowCount(self, parent):
-        return len(self.data)
+        return len(self._data)
 
     def columnCount(self, parent):
         return len(self.headerdata)
@@ -193,13 +193,13 @@ class ModelUserOwn(QAbstractTableModel):
   
         if col == 0:
             return QVariant(self.get_typ(row))
-        if col == 1:
+        elif col == 1:
             return QVariant(utilities.internal2str(self.get_price(row), 5))
-        if col == 2:
+        elif col == 2:
             return QVariant(utilities.internal2str(self.get_size(row)))
-        if col == 3:
+        elif col == 3:
             return QVariant(self.get_status(row))
-        if col == 4:
+        elif col == 4:
             return QVariant(self.get_oid(row))                
 
     def headerData(self, col, orientation, role):
@@ -211,9 +211,9 @@ class ModelUserOwn(QAbstractTableModel):
         """Sort table by given column number.
         """
         self.emit(SIGNAL("layoutAboutToBeChanged()"))
-        self.data = sorted(self.data, key=operator.itemgetter(Ncol))        
+        self._data = sorted(self._data, key=operator.itemgetter(Ncol))        
         if order == Qt.DescendingOrder:
-            self.data.reverse()
+            self._data.reverse()
         self.emit(SIGNAL("layoutChanged()"))
         self.lastsortcol = Ncol
         self.lastsortascdesc = order
@@ -238,7 +238,7 @@ class ModelStopOrders(QAbstractTableModel):
         self.stopOrders = self.market.gox.stopOrders = []
         self.market.gox.stopbot_executed.connect(self.__on_signal_executed)
         self.headerdata = headerdata
-        self.data = [["NO","  STOP ORDERS  ","YET"]]
+        self._data = [["NO","  STOP ORDERS  ","YET"]]
         
         self.lastsortascdesc = Qt.DescendingOrder
         self.lastsortcol = 0
@@ -252,16 +252,15 @@ class ModelStopOrders(QAbstractTableModel):
         self.__slot_changed()
 
     def __slot_changed(self):
-        self.data = self.__parse_data()
+        self._data = self.__parse_data()
         self.emit(SIGNAL("layoutChanged()"))
         self.sort(self.lastsortcol,self.lastsortascdesc)
 
     def __parse_data(self):
         '''Parse the own user order book'''
-        data_in = self.stopOrders
         data_out = []
         count = 1
-        for x in data_in:
+        for x in self.stopOrders:
             
             oid = count
             size = x[1]
@@ -272,10 +271,10 @@ class ModelStopOrders(QAbstractTableModel):
         return data_out
     
     def get(self,row,col):
-        return self.data[row][col]
+        return self._data[row][col]
     
     def rowCount(self, parent):
-        return len(self.data)
+        return len(self._data)
 
     def columnCount(self, parent):
         return len(self.headerdata)
@@ -291,7 +290,7 @@ class ModelStopOrders(QAbstractTableModel):
         row = index.row()
         col = index.column()
     
-        return QVariant(self.data[row][col])
+        return QVariant(self._data[row][col])
         
     def headerData(self, col, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
@@ -301,9 +300,9 @@ class ModelStopOrders(QAbstractTableModel):
     def sort(self, Ncol, order):
         """Sort table by given column number.  """
         self.emit(SIGNAL("layoutAboutToBeChanged()"))
-        self.data = sorted(self.data, key=operator.itemgetter(Ncol))        
+        self._data = sorted(self._data, key=operator.itemgetter(Ncol))        
         if order == Qt.DescendingOrder:
-            self.data.reverse()
+            self._data.reverse()
         self.emit(SIGNAL("layoutChanged()"))
         self.lastsortcol = Ncol
         self.lastsortascdesc = order
