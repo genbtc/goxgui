@@ -318,7 +318,7 @@ class View(QMainWindow):
 
     def set_trade_total_from_wallet(self):
         self.set_trade_total(
-            utilities.gox2internal(self.market.get_balance(self.market.curr_quote), self.market.curr_quote))
+            utilities.gox2float(self.market.get_balance(self.market.curr_quote), self.market.curr_quote))
         self.set_selected_trade_type('BUY')
 
     def display_orderlag(self, ms, text):
@@ -331,7 +331,7 @@ class View(QMainWindow):
         size = self.get_trade_size()
         price = self.get_trade_price()
         total = utilities.multiply_internal(price, size)
-        self.set_trade_total(total)
+        self.set_trade_total(utilities.internal2float(total))
 
         trade_name = 'BID' if trade_type == 'BUY' else 'ASK'
 

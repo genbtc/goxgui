@@ -188,7 +188,6 @@ class Preferences(QDialog):
         fontB = QtGui.QFont('Lucida Grande', 11)
         self.__ui.labelPassword.setFont(fontB)
         self.__ui.labelKeySecret.setFont(fontB)
-        self.__ui.labelCurrency.setFont(fontB)
 
     # end private methods
 
