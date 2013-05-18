@@ -5,7 +5,7 @@ from Crypto.Cipher import AES
 import sys
 import os
 import platform
-
+from goxapi import float2int,int2float,int2str
 
 # factor internal representation / regular float
 FACTOR_FLOAT = 1E8
@@ -30,16 +30,16 @@ def gox2str(value,currency,decimals=8):
         temp = value / 1E8
     elif currency == 'JPY' or currency == 'SEK':
         temp = value / 1E3
+    else:
+        temp = value / 1E5
     return ('{{:,.{0}f}}'.format(decimals).format(temp))
 
 def gox2float(value,currency):
-    if currency == 'USD':
-        return value / 1E5
-    if currency == 'BTC':
-        return value / 1E8
-    if currency == 'JPY' or currency == 'SEK':
-        return value / 1E3    
+    return int2float(value,currency)
 
+def float2gox(value,currency):
+    return float2int(value,currency)
+    
 def gox2internal(value, currency):
     '''
     Converts the given value from gox format
@@ -48,22 +48,25 @@ def gox2internal(value, currency):
     '''
     if currency == 'USD':
         return value * FACTOR_GOX_USD
-    if currency == 'BTC':
+    elif currency == 'BTC':
         return value * FACTOR_GOX_BTC
-    if currency == 'JPY' or currency == 'SEK':
+    elif currency in 'JPY SEK':
         return value * FACTOR_GOX_JPY
+    else:
+        return value * FACTOR_GOX_USD
 
 def internal2gox(value, currency):
     '''
     Converts the specified value from internal format to gox format
     '''
-    if currency == 'BTC':
+    if currency == 'USD':
+        return value / FACTOR_GOX_USD
+    elif currency == 'BTC':
         return value / FACTOR_GOX_BTC
-    if currency == 'JPY':
+    elif currency in 'JPY SEK':
         return value / FACTOR_GOX_JPY
     else:
         return value / FACTOR_GOX_USD
-
 
 def float2str(value, decimals=8):
     '''

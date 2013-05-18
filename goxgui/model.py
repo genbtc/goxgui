@@ -57,13 +57,13 @@ class Model(QAbstractTableModel):
         return data_out
 
     def get_price(self, index):
-        return utilities.gox2str(self._data[index][0],self.market.curr_quote,5)
+        return self._data[index][0]
 
     def get_size(self, index):
-        return utilities.gox2str(self._data[index][1],self.market.curr_base,8)
+        return self._data[index][1]
 
     def get_total(self, index):
-        return utilities.gox2str(self._data[index][2],self.market.curr_base,8)
+        return self._data[index][2]
 
     # START Qt methods
 
@@ -85,11 +85,11 @@ class Model(QAbstractTableModel):
         col = index.column()
 
         if col == 0:
-            return QVariant(self.get_price(row))
+            return QVariant(utilities.gox2str(self.get_price(row),self.market.curr_quote,5))
         elif col == 1:
-            return QVariant(self.get_size(row))
+            return QVariant(utilities.gox2str(self.get_size(row),self.market.curr_base,8))
         elif col == 2:
-            return QVariant(self.get_total(row))
+            return QVariant(utilities.gox2str(self.get_total(row),self.market.curr_base,6))
 
     def headerData(self, col, orientation, role):
         if orientation == Qt.Horizontal and role == Qt.DisplayRole:
@@ -149,10 +149,10 @@ class ModelUserOwn(QAbstractTableModel):
         return self._data[index][0]
     
     def get_price(self, index):
-        return utilities.gox2str(self._data[index][1],self.market.curr_quote,5)
+        return self._data[index][1]
 
     def get_size(self, index):
-        return utilities.gox2str(self._data[index][2],self.market.curr_base,8)
+        return self._data[index][2]
     
     def get_status(self, index):    
         return self._data[index][3]
@@ -181,9 +181,9 @@ class ModelUserOwn(QAbstractTableModel):
         if col == 0:
             return QVariant(self.get_typ(row))
         elif col == 1:
-            return QVariant(self.get_price(row))
+            return QVariant(utilities.gox2str(self.get_price(row),self.market.curr_quote,5))
         elif col == 2:
-            return QVariant(self.get_size(row))
+            return QVariant(utilities.gox2str(self.get_size(row),self.market.curr_base,8))
         elif col == 3:
             return QVariant(self.get_status(row))
         elif col == 4:

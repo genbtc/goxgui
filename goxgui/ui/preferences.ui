@@ -259,7 +259,7 @@
           <item row="1" column="1">
            <widget class="QComboBox" name="comboBoxCurrencyFiat">
             <property name="editable">
-             <bool>true</bool>
+             <bool>false</bool>
             </property>
             <property name="minimumContentsLength">
              <number>3</number>
@@ -269,7 +269,7 @@
           <item row="2" column="1">
            <widget class="QComboBox" name="comboBoxCurrencyTarget">
             <property name="editable">
-             <bool>true</bool>
+             <bool>false</bool>
             </property>
             <property name="minimumContentsLength">
              <number>3</number>
@@ -355,6 +355,9 @@
         </item>
         <item row="1" column="0">
          <widget class="QLabel" name="label_5">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
           <property name="text">
            <string>Preferences:</string>
           </property>

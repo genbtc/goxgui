@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'main_window.ui'
 #
-# Created: Thu May 09 02:24:44 2013
+# Created: Sat May 18 07:04:00 2013
 #      by: PyQt4 UI code generator 4.10
 #
 # WARNING! All changes made in this file will be lost!
@@ -555,10 +555,8 @@ class Ui_MainWindow(object):
         MainWindow.setWindowTitle(_translate("MainWindow", "MtGox Trading UI", None))
         self.groupBoxAccount.setTitle(_translate("MainWindow", "Account", None))
         self.pushButtonWalletA.setToolTip(_translate("MainWindow", "Push to use this value", None))
-        self.pushButtonWalletA.setText(_translate("MainWindow", "BTC", None))
         self.labelOrderlag.setToolTip(_translate("MainWindow", "MtGox trading lag (how long it takes for an order to be executed)", None))
         self.pushButtonWalletB.setToolTip(_translate("MainWindow", "Push to use this value", None))
-        self.pushButtonWalletB.setText(_translate("MainWindow", "USD", None))
         self.groupBoxTrading.setTitle(_translate("MainWindow", "Trading", None))
         self.radioButtonBuy.setText(_translate("MainWindow", "Buy", None))
         self.radioButtonSell.setText(_translate("MainWindow", "Sell", None))
@@ -567,10 +565,10 @@ class Ui_MainWindow(object):
         self.doubleSpinBoxBtc.setToolTip(_translate("MainWindow", "Size (in BTC)", None))
         self.pushButtonPrice.setToolTip(_translate("MainWindow", "Suggest price", None))
         self.pushButtonPrice.setText(_translate("MainWindow", "Price", None))
-        self.doubleSpinBoxPrice.setToolTip(_translate("MainWindow", "Price (in USD)", None))
+        self.doubleSpinBoxPrice.setToolTip(_translate("MainWindow", "Price (fiat)", None))
         self.pushButtonTotal.setToolTip(_translate("MainWindow", "Recalculate total trade worth", None))
         self.pushButtonTotal.setText(_translate("MainWindow", "Total", None))
-        self.doubleSpinBoxTotal.setToolTip(_translate("MainWindow", "Total trade worth (in USD)", None))
+        self.doubleSpinBoxTotal.setToolTip(_translate("MainWindow", "Total trade worth (fiat)", None))
         self.pushButtonGo.setText(_translate("MainWindow", "Go!", None))
         self.lineEditOrder.setToolTip(_translate("MainWindow", "Paste order ID here or click link above", None))
         self.lineEditOrder.setPlaceholderText(_translate("MainWindow", "Order ID", None))

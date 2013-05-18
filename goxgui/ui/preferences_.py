@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'preferences.ui'
 #
-# Created: Wed May 15 03:07:38 2013
+# Created: Sat May 18 06:07:02 2013
 #      by: PyQt4 UI code generator 4.10
 #
 # WARNING! All changes made in this file will be lost!
@@ -118,12 +118,12 @@ class Ui_Preferences(object):
         self.labelCurrencyboxDescription.setObjectName(_fromUtf8("labelCurrencyboxDescription"))
         self.gridLayout_3.addWidget(self.labelCurrencyboxDescription, 0, 1, 1, 2)
         self.comboBoxCurrencyFiat = QtGui.QComboBox(self.groupBoxCurrency)
-        self.comboBoxCurrencyFiat.setEditable(True)
+        self.comboBoxCurrencyFiat.setEditable(False)
         self.comboBoxCurrencyFiat.setMinimumContentsLength(3)
         self.comboBoxCurrencyFiat.setObjectName(_fromUtf8("comboBoxCurrencyFiat"))
         self.gridLayout_3.addWidget(self.comboBoxCurrencyFiat, 1, 1, 1, 1)
         self.comboBoxCurrencyTarget = QtGui.QComboBox(self.groupBoxCurrency)
-        self.comboBoxCurrencyTarget.setEditable(True)
+        self.comboBoxCurrencyTarget.setEditable(False)
         self.comboBoxCurrencyTarget.setMinimumContentsLength(3)
         self.comboBoxCurrencyTarget.setObjectName(_fromUtf8("comboBoxCurrencyTarget"))
         self.gridLayout_3.addWidget(self.comboBoxCurrencyTarget, 2, 1, 1, 1)
@@ -161,6 +161,7 @@ class Ui_Preferences(object):
         self.doubleSpinBoxGROUPORDERS.setObjectName(_fromUtf8("doubleSpinBoxGROUPORDERS"))
         self.formLayout.setWidget(0, QtGui.QFormLayout.FieldRole, self.doubleSpinBoxGROUPORDERS)
         self.label_5 = QtGui.QLabel(self.formLayoutWidget)
+        self.label_5.setEnabled(False)
         self.label_5.setObjectName(_fromUtf8("label_5"))
         self.formLayout.setWidget(1, QtGui.QFormLayout.LabelRole, self.label_5)
         self.tabWidget.addTab(self.tabVisual, _fromUtf8(""))

@@ -82,9 +82,6 @@
            <property name="toolTip">
             <string>Push to use this value</string>
            </property>
-           <property name="text">
-            <string>BTC</string>
-           </property>
           </widget>
          </item>
          <item>
@@ -136,9 +133,6 @@
            </property>
            <property name="toolTip">
             <string>Push to use this value</string>
-           </property>
-           <property name="text">
-            <string>USD</string>
            </property>
           </widget>
          </item>
@@ -293,7 +287,7 @@
             </sizepolicy>
            </property>
            <property name="toolTip">
-            <string>Price (in USD)</string>
+            <string>Price (fiat)</string>
            </property>
            <property name="alignment">
             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -331,7 +325,7 @@
             </sizepolicy>
            </property>
            <property name="toolTip">
-            <string>Total trade worth (in USD)</string>
+            <string>Total trade worth (fiat)</string>
            </property>
            <property name="alignment">
             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>

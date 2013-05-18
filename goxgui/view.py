@@ -124,16 +124,20 @@ class View(QMainWindow):
         '''
         # the default fixed font is unreadable on mac, so replace it
         font = QtGui.QFont('Monaco', 11)
-        self.ui.tableAsk.setFont(font)
-        self.ui.tableBid.setFont(font)
-        self.ui.tableUserOrders.setFont(font)
-        self.ui.tableStopOrders.setFont(font)
-        self.ui.textBrowserLog.setFont(font)
-        self.ui.textBrowserStatus.setFont(font)
-        self.ui.lineEditOrder.setFont(font)
-        self.ui.doubleSpinBoxBtc.setFont(font)
-        self.ui.doubleSpinBoxPrice.setFont(font)
-        self.ui.doubleSpinBoxTotal.setFont(font)
+        changes = [
+            self.ui.tableAsk,
+            self.ui.tableBid,
+            self.ui.tableUserOrders,
+            self.ui.tableStopOrders,
+            self.ui.textBrowserLog,
+            self.ui.textBrowserStatus,
+            self.ui.lineEditOrder,
+            self.ui.doubleSpinBoxBtc,
+            self.ui.doubleSpinBoxPrice,
+            self.ui.doubleSpinBoxTotal
+            ]
+        for x in changes:
+            x.setFont(font)
 
         # the space between application title bar and
         # the ui elements is too small on mac
@@ -268,33 +272,33 @@ class View(QMainWindow):
     def set_wallet_a(self, value):
         self.ui.pushButtonWalletA.setEnabled(value > 0)
         self.ui.pushButtonWalletA.setText(
-            self.market.curr_base + ': ' + utilities.internal2str(value))
+            self.market.curr_base + ': ' + utilities.gox2str(value, self.market.curr_base))
 
     def set_wallet_b(self, value):
         self.ui.pushButtonWalletB.setEnabled(value > 0)
         self.ui.pushButtonWalletB.setText(
-            self.market.curr_quote + ': ' + utilities.internal2str(value, 5))
+            self.market.curr_quote + ': ' + utilities.gox2str(value, self.market.curr_quote, 5))
 
     def get_trade_size(self):
-        value = self.ui.doubleSpinBoxBtc.value()
-        return utilities.float2internal(value)
+        return self.ui.doubleSpinBoxBtc.value()
 
     def set_trade_size(self, value):
-        self.ui.doubleSpinBoxBtc.setValue(float(value))
+        value = utilities.gox2float(value,self.market.curr_base)
+        self.ui.doubleSpinBoxBtc.setValue(value)
 
     def get_trade_price(self):
-        value = self.ui.doubleSpinBoxPrice.value()
-        return utilities.float2internal(value)
+        return self.ui.doubleSpinBoxPrice.value()
 
     def set_trade_price(self, value):
-        self.ui.doubleSpinBoxPrice.setValue(float(value))
+        value = utilities.gox2float(value,self.market.curr_quote)
+        self.ui.doubleSpinBoxPrice.setValue(value)
 
     def get_trade_total(self):
-        value = self.ui.doubleSpinBoxTotal.value()
-        return utilities.float2internal(value)
+        return self.ui.doubleSpinBoxTotal.value()
 
     def set_trade_total(self, value):
-        self.ui.doubleSpinBoxTotal.setValue(float(value))
+        value = utilities.gox2float(value,self.market.curr_quote)
+        self.ui.doubleSpinBoxTotal.setValue(value)
 
     def get_order_id(self):
         return str(self.ui.lineEditOrder.text())
@@ -306,19 +310,15 @@ class View(QMainWindow):
         self.set_order_id(str(url.toString()))
 
     def display_wallet(self):
-        self.set_wallet_a(
-            utilities.gox2internal(self.market.get_balance(self.market.curr_base), self.market.curr_base))
-        self.set_wallet_b(
-            utilities.gox2internal(self.market.get_balance(self.market.curr_quote), self.market.curr_quote))
+        self.set_wallet_a(self.market.get_balance(self.market.curr_base))
+        self.set_wallet_b(self.market.get_balance(self.market.curr_quote))
 
     def set_trade_size_from_wallet(self):
-        self.set_trade_size(
-            utilities.gox2float(self.market.get_balance(self.market.curr_base), self.market.curr_base))
+        self.set_trade_size(self.market.get_balance(self.market.curr_base))
         self.set_selected_trade_type('SELL')
 
     def set_trade_total_from_wallet(self):
-        self.set_trade_total(
-            utilities.gox2float(self.market.get_balance(self.market.curr_quote), self.market.curr_quote))
+        self.set_trade_total(self.market.get_balance(self.market.curr_quote))
         self.set_selected_trade_type('BUY')
 
     def display_orderlag(self, ms, text):
@@ -330,21 +330,25 @@ class View(QMainWindow):
 
         size = self.get_trade_size()
         price = self.get_trade_price()
-        total = utilities.multiply_internal(price, size)
-        self.set_trade_total(utilities.internal2float(total))
+        total = price * size
+        self.set_trade_total(utilities.float2gox(total,self.market.curr_quote))
 
         trade_name = 'BID' if trade_type == 'BUY' else 'ASK'
 
-        self.status_message('Placing order: {0} {1} BTC at {2} USD (total {3} USD)...'.format(# @IgnorePep8
+        self.status_message('Placing order: {0} {1} {2} at {3} {4} (total {5} {4})...'.format(# @IgnorePep8
             trade_name,
-            utilities.internal2str(size),
-            utilities.internal2str(price, 5),
-            utilities.internal2str(total, 5)))
-
+            utilities.float2str(size, 8),
+            self.market.curr_base,
+            utilities.float2str(price, 5),
+            self.market.curr_quote,
+            utilities.float2str(total, 6)))
+        
+        priceGox = utilities.float2gox(price, self.market.curr_quote)
+        sizeGox = utilities.float2gox(size, self.market.curr_base)
         if trade_type == 'BUY':
-            self.market.buy(price, size)
+            self.market.buy(priceGox, sizeGox)
         else:
-            self.market.sell(price, size)
+            self.market.sell(priceGox, sizeGox)
 
     def recalculate_size(self):
         #When the size button is clicked:
@@ -354,16 +358,16 @@ class View(QMainWindow):
 
         total = self.get_trade_total()
         #divide Total by Price and fill the size edit box in.
-        size = utilities.divide_internal(total, price)
-        self.set_trade_size(utilities.internal2float(size))
+        size = total / price
+        self.set_trade_size(utilities.float2gox(size,self.market.curr_base))
 
     def recalculate_total(self):
         #When the total button is clicked
         price = self.get_trade_price()
         size = self.get_trade_size()
         #Multiply Price by Size and fill the total edit box in
-        total = utilities.multiply_internal(price, size)
-        self.set_trade_total(utilities.internal2float(total))
+        total = price * size
+        self.set_trade_total(utilities.float2gox(total,self.market.curr_quote))
 
     def display_userorder(self, price, size, order_type, oid, status):
 

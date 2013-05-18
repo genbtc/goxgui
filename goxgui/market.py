@@ -92,17 +92,13 @@ class GoxMarket(QObject):
         '''
         Places buy order
         '''
-        sizeGox = utilities.internal2gox(size, self.curr_base)
-        priceGox = utilities.internal2gox(price, self.curr_quote)
-        self.gox.buy(priceGox, sizeGox)
+        self.gox.buy(price, size)
 
     def sell(self, price, size):
         '''
         Places sell order
         '''
-        sizeGox = utilities.internal2gox(size, self.curr_base)
-        priceGox = utilities.internal2gox(price, self.curr_quote)
-        self.gox.sell(priceGox, sizeGox)
+        self.gox.sell(price, size)
 
     def cancel(self, order_id):
         '''
@@ -120,8 +116,11 @@ class GoxMarket(QObject):
         '''
         Returns the account balance for the specified currency
         '''
-        return self.gox.wallet[currency]
-
+        if currency in self.gox.wallet:
+            return self.gox.wallet[currency]
+        else:
+            return 0.0
+    
     def initialize_ticker(self):
         use_ssl = self.gox.config.get_bool("gox", "use_ssl")
         proto = {True: "https", False: "http"}[use_ssl]

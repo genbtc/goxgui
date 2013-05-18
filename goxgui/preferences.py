@@ -15,14 +15,32 @@ class Preferences(QDialog):
     GROUP_ORDERS = 0.6
     DEFAULT_PASSWORD = 'fffuuuuuu'
     FILENAME = 'goxgui.ini'
-
+    FIAT_CURRENCIES = [
+        'USD',
+        'EUR',
+        'JPY',
+        'CAD',
+        'GBP',
+        'CHF',
+        'RUB',
+        'AUD',
+        'SEK',
+        'DKK',
+        'HKD',
+        'PLN',
+        'CNY',
+        'SGD',
+        'THB',
+        'NZD',
+        'NOK'
+        ]
     def __init__(self):
         QDialog.__init__(self)
 
         # set up ui
         self.__ui = Ui_Preferences()
         self.__ui.setupUi(self)
-
+      
         # improve ui on mac
         if utilities.platform_is_mac():
             self.__adjust_for_mac()
@@ -39,6 +57,18 @@ class Preferences(QDialog):
         
         self.do_configfile()
 
+    def get_fiat_currency_index(self, other):
+        '''
+        Returns the index of the given currency in the
+        fiat currency list.
+        '''
+        index = 0
+        for currency in self.FIAT_CURRENCIES:
+            if currency == other:
+                return index
+            index += 1
+        raise Exception('Currency {} not found.'.format(other))        
+        
     def do_configfile(self):
         # initialize config parser
         self.configparser = RawConfigParser()
@@ -110,8 +140,10 @@ class Preferences(QDialog):
         self.__ui.lineEditPassword.setText(self.get('password'))
         self.__set_status('')
         #populate the Various Settings, Currency tab
+        #populate combo boxes with currencies:
         self.__ui.comboBoxCurrencyFiat.clear()
-        self.__ui.comboBoxCurrencyFiat.addItem(self.configparser.get("gox","quote_currency"))
+        self.__ui.comboBoxCurrencyFiat.addItems(self.FIAT_CURRENCIES)
+        self.__ui.comboBoxCurrencyFiat.setCurrentIndex(self.get_fiat_currency_index(self.configparser.get("gox","quote_currency")))
         self.__ui.comboBoxCurrencyTarget.clear()
         self.__ui.comboBoxCurrencyTarget.addItem(self.configparser.get("gox","base_currency"))
         #set default order grouping 

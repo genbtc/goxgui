@@ -10,14 +10,29 @@ goxgui is a Qt front end for [prof7bit's goxtool](http://prof7bit.github.io/goxt
 
 Features
 --------
-* Create Stop-Loss market sell orders (new tab)
-* Stop-Gain market buy orders (just use a negative amount of BTC)
-* Display User Orders (new tab)
+
+* Stop-Loss Tab (with Stop-Loss market sells (fixed or TRAILING) & Stop-Gain market buys)
 * Display asks / bids (Order Book tab)
+* Display User Orders (User Orders tab)
+* Place and cancel individual orders or All Orders
 * Ticker in Title bar (and new Ticker Tab with auto-refresh)
-* Display MtGox account balance (USD/BTC)
-* Display MtGox lag
-* Place and cancel orders (USD)
+* Display MtGox account balance (for fiat and crypto)
+* Display MtGox lag in seconds
+* Multi currency support including all gox supported fiat currencies and potential support for LTC/NMC
+
+Stop-Loss Instructions
+------------------------
+
+"Stop-Gain Market buys" are something else entirely. if the price is going up and you dont want to be left behind, this is when you use the "negative size" to tell the bot to BUY instead of sell, once the target price is reached.
+
+To recap:
++Size , +Price = Stop Loss Market Sell ("size" BTC will be sold at market, when price falls at or below "Price")
+
++Size,  -Price = TRAILING Stop Loss Market sell (same as the first one, except the stop loss target price will start off at the current price minus "Price", as the market goes up, the stop target will compensate, and should the price fall below the new adjusted target (the sell will fire and PROFITS will be taken).
+
+-Size,  +Price = Stop GAIN market BUY ("size" BTC (the negative signifies a buy), will be BOUGHT at market, when the price climbs at or above "Price")
+
+WARNING: -Size, -Price <---- DONT try do it, i did not create something to handle this, and it has to be coded before it can work, (refer to https://bitcointalk.org/index.php?topic=176489.msg2022346#msg2022346 ) for a theoretical run through of what it would do.
 
 
 Prerequisites
@@ -73,6 +88,12 @@ Once you enter the API key and Secret, they are encrypted in the .ini file. Prev
 
 This will store your password, and auto-login everytime you launch it next time.
 
+
+Issues
+--------
+Stop Loss:
+When you go into preferences, and it says "Preferences changed, restarting market. Market restarted successfully." <- this causes Stop Loss orders to be erased (but they are still visible in the page.) An upcoming change should solve this. Until then, please do not change preferences once you have stop loss orders set up.
+- Also, do not try to use negative Size and negative price, as mentioned above
 
 Requests
 --------
